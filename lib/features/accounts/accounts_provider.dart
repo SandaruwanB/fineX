@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/services/db_helper.dart';
 
 class Account {
   final String id;
@@ -31,10 +32,32 @@ class Account {
       color: color ?? this.color,
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'balance': balance,
+      'type': type,
+      'color': color.toARGB32(),
+    };
+  }
+
+  factory Account.fromMap(Map<String, dynamic> map) {
+    return Account(
+      id: map['id'] as String,
+      name: map['name'] as String,
+      balance: map['balance'] as double,
+      type: map['type'] as String,
+      color: Color(map['color'] as int),
+    );
+  }
 }
 
 class AccountsNotifier extends StateNotifier<List<Account>> {
-  AccountsNotifier() : super(_initialAccounts);
+  AccountsNotifier() : super([]) {
+    loadAccounts();
+  }
 
   static final List<Account> _initialAccounts = [
     Account(
@@ -60,7 +83,20 @@ class AccountsNotifier extends StateNotifier<List<Account>> {
     ),
   ];
 
-  void addAccount(String name, double balance, String type, Color color) {
+  Future<void> loadAccounts() async {
+    final list = await DbHelper.getAccounts();
+    if (list.isEmpty) {
+      // First launch, populate defaults in SQLite database
+      for (var acc in _initialAccounts) {
+        await DbHelper.insertAccount(acc.toMap());
+      }
+      state = _initialAccounts;
+    } else {
+      state = list.map((item) => Account.fromMap(item)).toList();
+    }
+  }
+
+  Future<void> addAccount(String name, double balance, String type, Color color) async {
     final newAccount = Account(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       name: name,
@@ -68,11 +104,18 @@ class AccountsNotifier extends StateNotifier<List<Account>> {
       type: type,
       color: color,
     );
+    
+    await DbHelper.insertAccount(newAccount.toMap());
     state = [...state, newAccount];
   }
 
-  void deleteAccount(String id) {
+  Future<void> deleteAccount(String id) async {
+    await DbHelper.deleteAccount(id);
     state = state.where((acc) => acc.id != id).toList();
+  }
+
+  void refreshFromDatabase(List<Account> loadedAccounts) {
+    state = loadedAccounts;
   }
 }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/services/db_helper.dart';
 
 class ExpenseCategory {
   final String id;
@@ -13,8 +14,8 @@ class ExpenseCategory {
     required this.id,
     required this.name,
     required this.icon,
-    required this.budget,
     required this.spent,
+    required this.budget,
     required this.color,
   });
 
@@ -35,10 +36,34 @@ class ExpenseCategory {
       color: color ?? this.color,
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'icon': icon.codePoint,
+      'budget': budget,
+      'spent': spent,
+      'color': color.toARGB32(),
+    };
+  }
+
+  factory ExpenseCategory.fromMap(Map<String, dynamic> map) {
+    return ExpenseCategory(
+      id: map['id'] as String,
+      name: map['name'] as String,
+      icon: IconData(map['icon'] as int, fontFamily: 'MaterialIcons'),
+      budget: map['budget'] as double,
+      spent: map['spent'] as double,
+      color: Color(map['color'] as int),
+    );
+  }
 }
 
 class CategoriesNotifier extends StateNotifier<List<ExpenseCategory>> {
-  CategoriesNotifier() : super(_initialCategories);
+  CategoriesNotifier() : super([]) {
+    loadCategories();
+  }
 
   static final List<ExpenseCategory> _initialCategories = [
     ExpenseCategory(
@@ -75,7 +100,20 @@ class CategoriesNotifier extends StateNotifier<List<ExpenseCategory>> {
     ),
   ];
 
-  void addCategory(String name, IconData icon, double budget, Color color) {
+  Future<void> loadCategories() async {
+    final list = await DbHelper.getCategories();
+    if (list.isEmpty) {
+      // First launch, populate defaults
+      for (var cat in _initialCategories) {
+        await DbHelper.insertCategory(cat.toMap());
+      }
+      state = _initialCategories;
+    } else {
+      state = list.map((item) => ExpenseCategory.fromMap(item)).toList();
+    }
+  }
+
+  Future<void> addCategory(String name, IconData icon, double budget, Color color) async {
     final newCategory = ExpenseCategory(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       name: name,
@@ -84,11 +122,18 @@ class CategoriesNotifier extends StateNotifier<List<ExpenseCategory>> {
       spent: 0.0,
       color: color,
     );
+    
+    await DbHelper.insertCategory(newCategory.toMap());
     state = [...state, newCategory];
   }
 
-  void deleteCategory(String id) {
+  Future<void> deleteCategory(String id) async {
+    await DbHelper.deleteCategory(id);
     state = state.where((cat) => cat.id != id).toList();
+  }
+
+  void refreshFromDatabase(List<ExpenseCategory> loadedCategories) {
+    state = loadedCategories;
   }
 }
 

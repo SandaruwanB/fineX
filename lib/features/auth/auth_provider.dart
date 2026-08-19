@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/services/preference_service.dart';
 import '../../core/services/secure_storage_service.dart';
+import '../../core/services/db_helper.dart';
 
 class AuthState {
   final bool isOnboardingCompleted;
@@ -101,6 +102,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> resetAll() async {
     await _preferenceService.clear();
     await _secureStorageService.deletePin();
+    await DbHelper.clearAllTables();
     state = AuthState(
       isOnboardingCompleted: false,
       isPinSetup: false,

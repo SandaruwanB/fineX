@@ -6,6 +6,7 @@ import '../../../core/theme/theme_provider.dart';
 import '../../../core/widgets/main_drawer.dart';
 import '../../auth/auth_provider.dart';
 import '../../../core/services/local_auth_service.dart';
+import '../../../core/services/backup_service.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
@@ -142,6 +143,39 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 onTap: () {
                   // Direct to PIN update/setup screen
                   context.push('/pin-setup');
+                },
+              ),
+            ]),
+            const SizedBox(height: 24),
+
+            _buildSectionTitle('BACKUP & RESTORE'),
+            const SizedBox(height: 8),
+            _buildSettingCard([
+              ListTile(
+                leading: const Icon(Icons.upload_file_rounded),
+                title: const Text('Export Backup (.zip)'),
+                subtitle: const Text('Save your database zip archive'),
+                onTap: () async {
+                  final success = await BackupService.exportBackup(context);
+                  if (success && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Backup exported successfully!')),
+                    );
+                  }
+                },
+              ),
+              const Divider(indent: 16, endIndent: 16),
+              ListTile(
+                leading: const Icon(Icons.file_download_rounded),
+                title: const Text('Import / Restore Backup'),
+                subtitle: const Text('Restore database from a zip backup file'),
+                onTap: () async {
+                  final success = await BackupService.importBackup(context, ref);
+                  if (success && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Database restored successfully!')),
+                    );
+                  }
                 },
               ),
             ]),
