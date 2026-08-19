@@ -1,0 +1,8 @@
+app_identifier("com.finex.finex")
+apple_id(ENV["APPLE_ID"] || "your-apple-id@email.com")
+
+# Developer Portal Team ID
+team_id(ENV["APPLE_TEAM_ID"] || "YOUR_TEAM_ID")
+
+# App Store Connect Team ID
+itc_team_id(ENV["APPLE_ITC_TEAM_ID"] || "YOUR_ITC_TEAM_ID")

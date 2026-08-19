@@ -1,0 +1,19 @@
+default_platform(:android)
+
+platform :android do
+  desc "Submit a new build to Google Play Internal Test Track"
+  lane :deploy_internal do
+    aab_path = "../build/app/outputs/bundle/release/app-release.aab"
+    
+    unless File.exist?(aab_path)
+      UI.user_error!("Could not find the App Bundle (AAB) at #{aab_path}. Ensure flutter build appbundle has run.")
+    end
+
+    upload_to_play_store(
+      track: 'internal',
+      aab: aab_path,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+end

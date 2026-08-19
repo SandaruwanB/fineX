@@ -1,0 +1,26 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Submit a new build to Apple TestFlight"
+  lane :deploy_testflight do
+    # 1. Sync certificates and provisioning profiles (Match)
+    # Note: Requires setting up a private Git repo for certificates.
+    # match(type: "appstore")
+
+    # 2. Build the app using gym (build_app)
+    # Generates the IPA file
+    build_app(
+      scheme: "Runner",
+      workspace: "Runner.xcworkspace",
+      clean: true,
+      output_directory: "../build/ios/ipa",
+      output_name: "fineX.ipa"
+    )
+
+    # 3. Upload to TestFlight using pilot (upload_to_testflight)
+    upload_to_testflight(
+      ipa: "../build/ios/ipa/fineX.ipa",
+      skip_waiting_for_build_processing: true
+    )
+  end
+end

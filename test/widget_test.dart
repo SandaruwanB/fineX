@@ -1,30 +1,42 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:finex/main.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:finex/core/services/preference_service.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  group('PreferenceService Tests', () {
+    late SharedPreferences prefs;
+    late PreferenceService preferenceService;
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({
+        'onboarding_completed': false,
+        'biometrics_enabled': false,
+      });
+      prefs = await SharedPreferences.getInstance();
+      preferenceService = PreferenceService(prefs);
+    });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    test('initial states should be false', () {
+      expect(preferenceService.isOnboardingCompleted, isFalse);
+      expect(preferenceService.isBiometricsEnabled, isFalse);
+    });
+
+    test('setting onboarding status should persist', () async {
+      await preferenceService.setOnboardingCompleted(true);
+      expect(preferenceService.isOnboardingCompleted, isTrue);
+
+      // Verify directly from shared preferences
+      expect(prefs.getBool('onboarding_completed'), isTrue);
+    });
+
+    test('setting biometrics toggle should persist', () async {
+      await preferenceService.setBiometricsEnabled(true);
+      expect(preferenceService.isBiometricsEnabled, isTrue);
+
+      // Verify directly from shared preferences
+      expect(prefs.getBool('biometrics_enabled'), isTrue);
+    });
   });
 }
