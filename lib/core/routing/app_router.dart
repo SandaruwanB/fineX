@@ -9,6 +9,10 @@ import '../../features/dashboard/presentation/dashboard_page.dart';
 import '../../features/onboarding/presentation/onboarding_page.dart';
 import '../widgets/splash_page.dart';
 
+import '../../features/accounts/presentation/accounts_page.dart';
+import '../../features/categories/presentation/categories_page.dart';
+import '../../features/settings/presentation/settings_page.dart';
+
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
 
@@ -32,6 +36,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/dashboard',
         builder: (context, state) => const DashboardPage(),
+      ),
+      GoRoute(
+        path: '/accounts',
+        builder: (context, state) => const AccountsPage(),
+      ),
+      GoRoute(
+        path: '/categories',
+        builder: (context, state) => const CategoriesPage(),
+      ),
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) => const SettingsPage(),
       ),
     ],
     redirect: (context, state) {

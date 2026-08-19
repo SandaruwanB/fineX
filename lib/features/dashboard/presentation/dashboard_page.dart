@@ -5,6 +5,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../auth/auth_provider.dart';
 
+import '../../../core/widgets/main_drawer.dart';
+
 class DashboardPage extends ConsumerWidget {
   const DashboardPage({super.key});
 
@@ -15,6 +17,16 @@ class DashboardPage extends ConsumerWidget {
     final authNotifier = ref.read(authProvider.notifier);
 
     return Scaffold(
+      drawer: const MainDrawer(activeRoute: '/dashboard'),
+      appBar: AppBar(
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu_rounded),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+        title: const Text('fineX'),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -22,7 +34,7 @@ class DashboardPage extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. Header (User Info + Controls)
+                // 1. Header (User Info)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -46,28 +58,9 @@ class DashboardPage extends ConsumerWidget {
                         ),
                       ],
                     ),
-                    Row(
-                      children: [
-                        // Light/Dark Toggle
-                        IconButton(
-                          icon: Icon(
-                            isDark
-                                ? Icons.light_mode_rounded
-                                : Icons.dark_mode_rounded,
-                          ),
-                          onPressed: () {
-                            ref.read(themeProvider.notifier).toggleTheme();
-                          },
-                        ),
-                        // Log out / Lock App
-                        IconButton(
-                          icon: const Icon(Icons.lock_rounded),
-                          onPressed: () {
-                            authNotifier.logout();
-                          },
-                          tooltip: 'Lock Wallet',
-                        ),
-                      ],
+                    IconButton(
+                      icon: const Icon(Icons.notifications_outlined),
+                      onPressed: () {},
                     ),
                   ],
                 ),
