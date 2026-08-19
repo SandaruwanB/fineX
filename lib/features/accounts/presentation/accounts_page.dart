@@ -14,7 +14,7 @@ class AccountsPage extends ConsumerStatefulWidget {
 class _AccountsPageState extends ConsumerState<AccountsPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  void _showAddAccountDialog() {
+  void _showAddAccountBottomSheet() {
     final nameController = TextEditingController();
     final balanceController = TextEditingController();
     String selectedType = 'checking';
@@ -29,23 +29,57 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
       const Color(0xFF64748B), // Slate
     ];
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (ctx) {
         return StatefulBuilder(
           builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Link Account'),
-              content: SingleChildScrollView(
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            return Container(
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF161C2A) : Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                top: 24,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Link New Account',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    const SizedBox(height: 24),
                     TextField(
                       controller: nameController,
                       decoration: const InputDecoration(
                         labelText: 'Account Name',
                         hintText: 'e.g. Chase Checking',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -55,6 +89,9 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                       decoration: const InputDecoration(
                         labelText: 'Initial Balance',
                         hintText: 'e.g. 5000.00',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -65,6 +102,12 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
                       initialValue: selectedType,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
                       items: const [
                         DropdownMenuItem(value: 'checking', child: Text('Checking Account')),
                         DropdownMenuItem(value: 'savings', child: Text('Savings Account')),
@@ -84,7 +127,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                       'Card Theme Color',
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: colors.map((color) {
@@ -102,7 +145,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                               color: color,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: isSelected ? Colors.white : Colors.transparent,
+                                color: isSelected ? (isDark ? Colors.white : Colors.black) : Colors.transparent,
                                 width: 2,
                               ),
                             ),
@@ -110,31 +153,43 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                         );
                       }).toList(),
                     ),
+                    const SizedBox(height: 32),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text('Cancel'),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              final name = nameController.text.trim();
+                              final balance = double.tryParse(balanceController.text.trim()) ?? 0.0;
+                              if (name.isNotEmpty) {
+                                ref.read(accountsProvider.notifier).addAccount(
+                                      name,
+                                      balance,
+                                      selectedType,
+                                      selectedColor,
+                                    );
+                                Navigator.pop(ctx);
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: selectedColor,
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Link Account'),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    final name = nameController.text.trim();
-                    final balance = double.tryParse(balanceController.text.trim()) ?? 0.0;
-                    if (name.isNotEmpty) {
-                      ref.read(accountsProvider.notifier).addAccount(
-                            name,
-                            balance,
-                            selectedType,
-                            selectedColor,
-                          );
-                      Navigator.pop(ctx);
-                    }
-                  },
-                  child: const Text('Link'),
-                ),
-              ],
             );
           },
         );
@@ -191,7 +246,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
 
               // Add Account Button
               ElevatedButton.icon(
-                onPressed: _showAddAccountDialog,
+                onPressed: _showAddAccountBottomSheet,
                 icon: const Icon(Icons.add_rounded, color: Colors.black),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.emeraldGreen,

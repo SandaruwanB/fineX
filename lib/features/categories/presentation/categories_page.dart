@@ -14,7 +14,7 @@ class CategoriesPage extends ConsumerStatefulWidget {
 class _CategoriesPageState extends ConsumerState<CategoriesPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  void _showAddCategoryDialog() {
+  void _showAddCategoryBottomSheet() {
     final nameController = TextEditingController();
     final budgetController = TextEditingController();
     
@@ -41,23 +41,57 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
       const Color(0xFF8B5CF6), // Purple
     ];
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (ctx) {
         return StatefulBuilder(
           builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add Category'),
-              content: SingleChildScrollView(
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            return Container(
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF161C2A) : Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                top: 24,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Create Custom Category',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    const SizedBox(height: 24),
                     TextField(
                       controller: nameController,
                       decoration: const InputDecoration(
                         labelText: 'Category Name',
                         hintText: 'e.g. Subscriptions',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -67,6 +101,9 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
                       decoration: const InputDecoration(
                         labelText: 'Monthly Budget Limit',
                         hintText: 'e.g. 200.00',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -74,50 +111,52 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
                       'Choose Icon',
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                     ),
-                    const SizedBox(height: 8),
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 4,
-                        mainAxisSpacing: 8,
-                        crossAxisSpacing: 8,
-                      ),
-                      itemCount: icons.length,
-                      itemBuilder: (context, index) {
-                        final icon = icons[index];
-                        final isSelected = selectedIcon == icon;
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              selectedIcon = icon;
-                            });
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? selectedColor.withValues(alpha: 0.2)
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isSelected ? selectedColor : Colors.grey.withValues(alpha: 0.3),
-                                width: 2,
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 130,
+                      child: GridView.builder(
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8,
+                        ),
+                        itemCount: icons.length,
+                        itemBuilder: (context, index) {
+                          final icon = icons[index];
+                          final isSelected = selectedIcon == icon;
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedIcon = icon;
+                              });
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? selectedColor.withValues(alpha: 0.15)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isSelected ? selectedColor : Colors.grey.withValues(alpha: 0.3),
+                                  width: 2,
+                                ),
+                              ),
+                              child: Icon(
+                                icon,
+                                color: isSelected ? selectedColor : Colors.grey,
                               ),
                             ),
-                            child: Icon(
-                              icon,
-                              color: isSelected ? selectedColor : Colors.grey,
-                            ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     const Text(
                       'Category Theme Color',
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: colors.map((color) {
@@ -135,7 +174,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
                               color: color,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: isSelected ? Colors.white : Colors.transparent,
+                                color: isSelected ? (isDark ? Colors.white : Colors.black) : Colors.transparent,
                                 width: 2,
                               ),
                             ),
@@ -143,31 +182,43 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
                         );
                       }).toList(),
                     ),
+                    const SizedBox(height: 32),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text('Cancel'),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              final name = nameController.text.trim();
+                              final budget = double.tryParse(budgetController.text.trim()) ?? 0.0;
+                              if (name.isNotEmpty) {
+                                ref.read(categoriesProvider.notifier).addCategory(
+                                      name,
+                                      selectedIcon,
+                                      budget,
+                                      selectedColor,
+                                    );
+                                Navigator.pop(ctx);
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: selectedColor,
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Add Category'),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    final name = nameController.text.trim();
-                    final budget = double.tryParse(budgetController.text.trim()) ?? 0.0;
-                    if (name.isNotEmpty) {
-                      ref.read(categoriesProvider.notifier).addCategory(
-                            name,
-                            selectedIcon,
-                            budget,
-                            selectedColor,
-                          );
-                      Navigator.pop(ctx);
-                    }
-                  },
-                  child: const Text('Add'),
-                ),
-              ],
             );
           },
         );
@@ -197,7 +248,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
             children: [
               const SizedBox(height: 16),
               ElevatedButton.icon(
-                onPressed: _showAddCategoryDialog,
+                onPressed: _showAddCategoryBottomSheet,
                 icon: const Icon(Icons.add_rounded, color: Colors.black),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.emeraldGreen,
