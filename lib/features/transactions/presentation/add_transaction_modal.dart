@@ -22,7 +22,7 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
   final _amountController = TextEditingController();
   final _descriptionController = TextEditingController();
 
-  String _flowDirection = 'EXPENSE'; // 'EXPENSE' | 'INCOME' | 'TRANSFER'
+  String _flowDirection = 'EXPENSE'; 
   String? _selectedAccountId;
   String? _selectedCategoryId;
   String? _selectedTargetAccountId;
@@ -33,7 +33,6 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
   @override
   void initState() {
     super.initState();
-    // Pre-populate first account if available
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final accounts = ref.read(accountsProvider);
       if (accounts.isNotEmpty) {
@@ -124,13 +123,12 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
       }
     }
 
-    // Build splits list if enabled
     List<TransactionSplit> finalSplits = [];
     if (_isSplitEnabled && _flowDirection != 'TRANSFER') {
       for (var draft in _splits) {
         finalSplits.add(TransactionSplit(
           id: DateTime.now().millisecondsSinceEpoch.toString() + draft.hashCode.toString(),
-          transactionId: '', // Set dynamically inside provider
+          transactionId: '',
           categoryId: draft.categoryId,
           amount: draft.amount,
           flowDirection: _flowDirection,
@@ -171,17 +169,14 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
     final categories = ref.watch(categoriesProvider);
     final symbol = worldCurrencies[baseCurrency] ?? '\$';
 
-    // Filter categories matching the flow direction
     final filteredCategories = categories.where((cat) => cat.categoryType == _flowDirection).toList();
 
-    // Set first category by default if selection is null or invalid
     if (_flowDirection != 'TRANSFER' && filteredCategories.isNotEmpty) {
       if (_selectedCategoryId == null || !filteredCategories.any((c) => c.id == _selectedCategoryId)) {
         _selectedCategoryId = filteredCategories.first.id;
       }
     }
 
-    // Active color scheme feedback
     Color activeAccent;
     if (_flowDirection == 'INCOME') {
       activeAccent = AppTheme.emeraldGreen;
@@ -209,7 +204,6 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Top drag handle
               Center(
                 child: Container(
                   width: 40,
@@ -222,7 +216,6 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
               ),
               const SizedBox(height: 20),
 
-              // Title
               Text(
                 'Record Transaction',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -232,7 +225,6 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
               ),
               const SizedBox(height: 20),
 
-              // Segmented Flow Selector
               FlowSegmentedControl(
                 selectedValue: _flowDirection,
                 onValueChanged: (val) {
@@ -245,7 +237,6 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
               ),
               const SizedBox(height: 24),
 
-              // Amount Input
               TextFormField(
                 controller: _amountController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -274,12 +265,11 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
                   return null;
                 },
                 onChanged: (val) {
-                  setState(() {}); // Trigger split lists allocations re-math
+                  setState(() {}); 
                 },
               ),
               const SizedBox(height: 20),
 
-              // Accounts Dropdown
               DropdownButtonFormField<String>(
                 value: _selectedAccountId,
                 decoration: const InputDecoration(
@@ -302,9 +292,7 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
               ),
               const SizedBox(height: 20),
 
-              // Contextual Forms based on Flow Selected
               if (_flowDirection == 'TRANSFER') ...[
-                // Destination Account dropdown
                 DropdownButtonFormField<String>(
                   value: _selectedTargetAccountId,
                   decoration: const InputDecoration(
@@ -326,7 +314,6 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
                   },
                 ),
               ] else ...[
-                // Category Selector (if Splits disabled)
                 if (!_isSplitEnabled) ...[
                   DropdownButtonFormField<String>(
                     value: _selectedCategoryId,
@@ -357,7 +344,6 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
                 ],
 
                 const SizedBox(height: 12),
-                // Split Transaction Switch Toggle
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -382,7 +368,6 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
                   ],
                 ),
 
-                // Splits Form
                 if (_isSplitEnabled) ...[
                   const SizedBox(height: 12),
                   SplitTransactionList(
@@ -399,7 +384,6 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
               ],
 
               const SizedBox(height: 20),
-              // Description
               TextFormField(
                 controller: _descriptionController,
                 decoration: const InputDecoration(
@@ -412,7 +396,6 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
               ),
 
               const SizedBox(height: 32),
-              // Save / Cancel Action Buttons
               Row(
                 children: [
                   Expanded(

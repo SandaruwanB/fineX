@@ -1,11 +1,11 @@
 class Transaction {
   final String id;
-  final String flowDirection; // 'INFLOW' | 'OUTFLOW' | 'TRANSFER'
-  final String transactionType; // 'SALARY' | 'DIVIDEND' | 'OPERATING_EXPENSE' | 'TRANSFER' | 'REFUND' | etc.
+  final String flowDirection; 
+  final String transactionType; 
   final double amount;
-  final String? categoryId; // Nullable if a transfer or split
-  final String accountId; // Source account
-  final String? transferTargetAccountId; // Required if transfer
+  final String? categoryId; 
+  final String accountId; 
+  final String? transferTargetAccountId; 
   final double baseCurrencyAmount;
   final double exchangeRate;
   final DateTime timestamp;
@@ -96,7 +96,7 @@ class TransactionSplit {
   final String transactionId;
   final String categoryId;
   final double amount;
-  final String flowDirection; // 'INFLOW' | 'OUTFLOW'
+  final String flowDirection; 
   final String? description;
 
   TransactionSplit({

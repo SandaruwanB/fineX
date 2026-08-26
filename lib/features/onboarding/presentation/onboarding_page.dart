@@ -65,7 +65,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     return Scaffold(
       body: Stack(
         children: [
-          // Background subtle gradients for premium visual feel
           Positioned(
             top: -100,
             right: -100,

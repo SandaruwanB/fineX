@@ -33,7 +33,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
     final isPrivacyEnabled = ref.watch(privacyModeProvider);
 
-    // Dynamic calculations for Net Cash Flow card
     double totalInflow = 0.0;
     double totalOutflow = 0.0;
     for (var tx in transactions) {
@@ -46,7 +45,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     final netCashFlow = totalInflow - totalOutflow;
     final savingsRate = totalInflow > 0 ? ((totalInflow - totalOutflow) / totalInflow * 100) : 0.0;
 
-    // Accounts totals
     double liquidTotal = 0.0;
     double liabilityTotal = 0.0;
     for (var acc in accounts) {
@@ -73,7 +71,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         ),
         title: const Text('fineX'),
         actions: [
-          // Privacy Mode Switcher (eye icon)
           IconButton(
             icon: Icon(
               isPrivacyEnabled ? Icons.visibility_off_rounded : Icons.visibility_rounded,
@@ -88,7 +85,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       ),
       body: Stack(
         children: [
-          // Scrollable layout
           SafeArea(
             child: SingleChildScrollView(
               child: Padding(
@@ -96,15 +92,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Net Worth Card (with privacy support)
                     _buildNetWorthCard(isDark, totalNetWorth, liquidTotal, liabilityTotal),
                     const SizedBox(height: 24),
 
-                    // Net Cash Flow summary card
                     _buildNetCashFlowCard(isDark, totalInflow, totalOutflow, netCashFlow, savingsRate),
                     const SizedBox(height: 24),
-
-                    // Account Balances Stack / swipable list
                     Text(
                       'Liquid Accounts & Liabilities',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -116,7 +108,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     _buildAccountsCarousel(accounts, isDark),
                     const SizedBox(height: 32),
 
-                    // Recent Activity list
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -146,7 +137,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                       )
                     else
                       ...transactions.take(5).map((tx) {
-                        // Find matching category details
                         final cat = categories.firstWhere(
                           (c) => c.id == tx.categoryId,
                           orElse: () => AppCategory(
@@ -162,7 +152,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                           ),
                         );
 
-                        // Find matching account details
                         final acc = accounts.firstWhere(
                           (a) => a.id == tx.accountId,
                           orElse: () => Account(
@@ -185,7 +174,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             ),
           ),
 
-          // Backdrop Dimming when menu expands
           if (_isMenuOpen)
             GestureDetector(
               onTap: () => setState(() => _isMenuOpen = false),
@@ -197,7 +185,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               ),
             ),
 
-          // Draggable / Movable FAB assembly
           ..._buildDraggableFabMenu(context, isDark, size),
         ],
       ),
@@ -493,7 +480,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       ),
       child: Row(
         children: [
-          // Category Icon
           Container(
             width: 44,
             height: 44,
@@ -505,7 +491,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           ),
           const SizedBox(width: 16),
 
-          // Description & Account
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -536,7 +521,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             ),
           ),
 
-          // Amount
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [

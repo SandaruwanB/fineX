@@ -19,7 +19,6 @@ class _LockPageState extends ConsumerState<LockPage> {
   @override
   void initState() {
     super.initState();
-    // Auto-trigger biometrics on load if enabled
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _autoBiometricAuth();
     });
@@ -96,7 +95,6 @@ class _LockPageState extends ConsumerState<LockPage> {
         child: Column(
           children: [
             const Spacer(flex: 1),
-            // Header Section
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
@@ -133,7 +131,6 @@ class _LockPageState extends ConsumerState<LockPage> {
             ),
             const SizedBox(height: 40),
 
-            // PIN Dot Indicators
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(4, (index) {
@@ -159,7 +156,6 @@ class _LockPageState extends ConsumerState<LockPage> {
               }),
             ),
 
-            // Error Message
             Container(
               height: 40,
               alignment: Alignment.center,
@@ -175,7 +171,6 @@ class _LockPageState extends ConsumerState<LockPage> {
             ),
             const Spacer(flex: 1),
 
-            // Numeric Keypad
             Padding(
               padding: const EdgeInsets.only(bottom: 24, left: 32, right: 32),
               child: Column(
@@ -198,7 +193,6 @@ class _LockPageState extends ConsumerState<LockPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      // Biometrics Icon Button (or Empty Spacer if disabled)
                       state.isBiometricsEnabled
                           ? _buildActionButton(
                               icon: Icons.fingerprint_rounded,

@@ -152,7 +152,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 subtitle: const Text('Update your local security code'),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () {
-                  // Direct to PIN update/setup screen
                   context.push('/pin-setup');
                 },
               ),

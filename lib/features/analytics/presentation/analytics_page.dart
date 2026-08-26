@@ -24,17 +24,14 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
     final transactions = ref.watch(transactionsProvider);
     final categories = ref.watch(categoriesProvider);
 
-    // Compute range parameters (last 30 days)
     final now = DateTime.now();
     final thirtyDaysAgo = now.subtract(const Duration(days: 30));
 
-    // Filter relevant transactions
     final periodTransactions = transactions.where((tx) => tx.timestamp.isAfter(thirtyDaysAgo)).toList();
 
     double totalInflow = 0.0;
     double totalOutflow = 0.0;
     
-    // Map category ID to split sum allocation
     final Map<String, double> categorySums = {};
 
     for (var tx in periodTransactions) {
@@ -44,7 +41,6 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
         totalOutflow += tx.amount;
       }
 
-      // Sum allocations matching the selected tab
       if (tx.flowDirection == _selectedTab) {
         if (tx.splits.isEmpty) {
           final catId = tx.categoryId ?? '';
@@ -78,15 +74,12 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Net cash flow period metric card
                 _buildCashComparisonCard(isDark, totalInflow, totalOutflow),
                 const SizedBox(height: 32),
 
-                // Selector tabs
                 _buildTabsSelector(isDark),
                 const SizedBox(height: 24),
 
-                // Interactive Donut Chart section
                 if (activeTotal <= 0)
                   const Center(
                     child: Padding(

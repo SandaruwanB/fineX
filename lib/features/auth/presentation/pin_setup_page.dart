@@ -63,16 +63,13 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
       final authNotifier = ref.read(authProvider.notifier);
       await authNotifier.savePin(_pin);
 
-      // Check if device supports biometrics
       final localAuth = ref.read(localAuthServiceProvider);
       final hasHardware = await localAuth.isDeviceSupported;
       final canAuth = await localAuth.canAuthenticate;
 
       if (hasHardware && canAuth && mounted) {
-        // Navigate to biometrics setup page
         context.go('/biometrics-setup');
       } else {
-        // Biometrics not available, log in directly
         authNotifier.authenticateSession(true);
       }
     } else {
@@ -96,7 +93,6 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
         child: Column(
           children: [
             const Spacer(flex: 1),
-            // Header Section
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
@@ -134,7 +130,6 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
             ),
             const SizedBox(height: 40),
 
-            // PIN Dot Indicators
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(4, (index) {
@@ -160,7 +155,6 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
               }),
             ),
 
-            // Error Message
             Container(
               height: 40,
               alignment: Alignment.center,
@@ -176,7 +170,6 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
             ),
             const Spacer(flex: 1),
 
-            // Secure Custom Keypad
             Padding(
               padding: const EdgeInsets.only(bottom: 24, left: 32, right: 32),
               child: Column(
@@ -199,7 +192,6 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      // Back Button / Cancel Confirm
                       _isConfirming
                           ? _buildActionButton(
                               icon: Icons.arrow_back_rounded,

@@ -225,7 +225,6 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
-              // Balance Header
               Text(
                 'TOTAL BALANCE',
                 style: TextStyle(
@@ -256,8 +255,6 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                 label: const Text('Link New Account'),
               ),
               const SizedBox(height: 24),
-
-              // Accounts list
               Expanded(
                 child: accounts.isEmpty
                     ? const Center(
@@ -302,7 +299,6 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
       ),
       child: Stack(
         children: [
-          // Background abstract geometric pattern for high-fidelity look
           Positioned(
             right: -20,
             bottom: -20,

@@ -41,13 +41,12 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
       AppTheme.emeraldGreen,
       AppTheme.neonBlue,
       AppTheme.goldAccent,
-      const Color(0xFFEF4444), // Red
-      const Color(0xFFEC4899), // Pink
-      const Color(0xFF8B5CF6), // Purple
+      const Color(0xFFEF4444), 
+      const Color(0xFFEC4899), 
+      const Color(0xFF8B5CF6), 
     ];
 
     final categories = ref.read(categoriesProvider);
-    // Find potential parents (must be roots of matching type)
     final parentOptions = categories.where((c) => c.categoryType == defaultType && c.parentId == null).toList();
 
     showModalBottomSheet(
@@ -104,7 +103,6 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // If EXPENSE, show budget text field
                     if (defaultType == 'EXPENSE') ...[
                       TextField(
                         controller: budgetController,
@@ -119,7 +117,6 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
                   ),
                   const SizedBox(height: 16),
                 ],
-                    // Parent Category dropdown selector
                     if (parentOptions.isNotEmpty) ...[
                       DropdownButtonFormField<String?>(
                         value: selectedParentId,
@@ -315,7 +312,6 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
       padding: const EdgeInsets.all(24.0),
       child: Column(
         children: [
-          // Action button
           ElevatedButton.icon(
             onPressed: () => _showAddCategoryBottomSheet(type),
             icon: const Icon(Icons.add_rounded, color: Colors.black),
@@ -331,7 +327,6 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
           ),
           const SizedBox(height: 24),
 
-          // Categories Tree hierarchy
           Expanded(
             child: rootCategories.isEmpty
                 ? const Center(
@@ -344,7 +339,6 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
                     itemCount: rootCategories.length,
                     itemBuilder: (context, index) {
                       final parent = rootCategories[index];
-                      // Find subcategories of this parent root
                       final children = typeCategories.where((c) => c.parentId == parent.id).toList();
 
                       if (children.isEmpty) {
@@ -367,7 +361,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
                                 )
                               : null,
                           childrenPadding: const EdgeInsets.only(left: 16, bottom: 8),
-                          shape: const Border(), // Removes bottom line borders
+                          shape: const Border(),
                           children: children.map((child) {
                             return _buildCategoryItemRow(child, isDark, isChild: true);
                           }).toList(),
