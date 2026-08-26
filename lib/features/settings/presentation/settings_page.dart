@@ -7,6 +7,8 @@ import '../../../core/widgets/main_drawer.dart';
 import '../../auth/auth_provider.dart';
 import '../../../core/services/local_auth_service.dart';
 import '../../../core/services/backup_service.dart';
+import '../../../core/services/preference_service.dart';
+import '../../../core/constants/currencies.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
@@ -49,6 +51,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final authState = ref.watch(authProvider);
     final themeMode = ref.watch(themeProvider);
     final isDark = themeMode == ThemeMode.dark;
+    final baseCurrency = ref.watch(baseCurrencyProvider);
 
     return Scaffold(
       key: _scaffoldKey,
@@ -120,6 +123,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 secondary: const Icon(Icons.dark_mode_rounded),
                 title: const Text('Dark Mode Theme'),
                 subtitle: const Text('Switch interface appearance'),
+              ),
+              const Divider(indent: 16, endIndent: 16),
+              ListTile(
+                leading: const Icon(Icons.monetization_on_rounded),
+                title: const Text('Base Currency'),
+                subtitle: Text('Current currency: $baseCurrency'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => _showCurrencyPickerDialog(context),
               ),
             ]),
             const SizedBox(height: 24),
@@ -260,6 +271,70 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             child: const Text('Reset Everything'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showCurrencyPickerDialog(BuildContext context) {
+    final currentCurrency = ref.read(baseCurrencyProvider);
+    final currencyList = worldCurrencies.keys.toList()..sort();
+    String searchQuery = '';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          final filteredCurrencies = currencyList
+              .where((c) => c.toLowerCase().contains(searchQuery.toLowerCase()))
+              .toList();
+
+          return AlertDialog(
+            title: const Text('Select Base Currency'),
+            content: SizedBox(
+              width: double.maxFinite,
+              height: 400,
+              child: Column(
+                children: [
+                  TextField(
+                    decoration: const InputDecoration(
+                      hintText: 'Search currency...',
+                      prefixIcon: Icon(Icons.search_rounded),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                      ),
+                    ),
+                    onChanged: (val) {
+                      setState(() {
+                        searchQuery = val;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: filteredCurrencies.length,
+                      itemBuilder: (context, index) {
+                        final curr = filteredCurrencies[index];
+                        final symbol = worldCurrencies[curr] ?? '';
+                        return RadioListTile<String>(
+                          title: Text('$curr ($symbol)'),
+                          value: curr,
+                          groupValue: currentCurrency,
+                          onChanged: (val) {
+                            if (val != null) {
+                              ref.read(baseCurrencyProvider.notifier).setCurrency(val);
+                              Navigator.pop(ctx);
+                            }
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/main_drawer.dart';
+import '../../../core/widgets/currency_display.dart';
 import '../accounts_provider.dart';
 
 class AccountsPage extends ConsumerStatefulWidget {
@@ -234,9 +235,8 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                   color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                '\$${totalBalance.toStringAsFixed(2)}',
+              CurrencyDisplay(
+                amount: totalBalance,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontSize: 32,
                       fontWeight: FontWeight.w900,

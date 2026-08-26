@@ -1,10 +1,14 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_provider.dart';
-
+import '../../../core/widgets/currency_display.dart';
 import '../../../core/widgets/main_drawer.dart';
+import '../../accounts/accounts_provider.dart';
+import '../../categories/categories_provider.dart';
+import '../../transactions/presentation/add_transaction_modal.dart';
+import '../../transactions/transactions_provider.dart';
+import '../../../core/services/preference_service.dart';
 
 class DashboardPage extends ConsumerStatefulWidget {
   const DashboardPage({super.key});
@@ -23,6 +27,37 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     final isDark = themeMode == ThemeMode.dark;
     final size = MediaQuery.of(context).size;
 
+    final accounts = ref.watch(accountsProvider);
+    final transactions = ref.watch(transactionsProvider);
+    final categories = ref.watch(categoriesProvider);
+
+    final isPrivacyEnabled = ref.watch(privacyModeProvider);
+
+    // Dynamic calculations for Net Cash Flow card
+    double totalInflow = 0.0;
+    double totalOutflow = 0.0;
+    for (var tx in transactions) {
+      if (tx.flowDirection == 'INFLOW') {
+        totalInflow += tx.amount;
+      } else if (tx.flowDirection == 'OUTFLOW') {
+        totalOutflow += tx.amount;
+      }
+    }
+    final netCashFlow = totalInflow - totalOutflow;
+    final savingsRate = totalInflow > 0 ? ((totalInflow - totalOutflow) / totalInflow * 100) : 0.0;
+
+    // Accounts totals
+    double liquidTotal = 0.0;
+    double liabilityTotal = 0.0;
+    for (var acc in accounts) {
+      if (acc.type == 'credit') {
+        liabilityTotal += acc.balance.abs();
+      } else {
+        liquidTotal += acc.balance;
+      }
+    }
+    final totalNetWorth = liquidTotal - liabilityTotal;
+
     if (_fabPosition == const Offset(-1, -1)) {
       _fabPosition = Offset(size.width - 72, size.height - 200);
     }
@@ -37,10 +72,23 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           ),
         ),
         title: const Text('fineX'),
+        actions: [
+          // Privacy Mode Switcher (eye icon)
+          IconButton(
+            icon: Icon(
+              isPrivacyEnabled ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+              color: isPrivacyEnabled ? AppTheme.emeraldGreen : null,
+            ),
+            onPressed: () {
+              ref.read(privacyModeProvider.notifier).togglePrivacyMode();
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Stack(
         children: [
-          // Main Scroll View
+          // Scrollable layout
           SafeArea(
             child: SingleChildScrollView(
               child: Padding(
@@ -48,252 +96,96 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 1. Header (User Info)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Welcome back,',
-                              style: Theme.of(
-                                context,
-                              ).textTheme.bodyMedium?.copyWith(fontSize: 14),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Alex Morgan',
-                              style: Theme.of(context).textTheme.titleLarge
-                                  ?.copyWith(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                            ),
-                          ],
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.notifications_outlined),
-                          onPressed: () {},
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
+                    // Net Worth Card (with privacy support)
+                    _buildNetWorthCard(isDark, totalNetWorth, liquidTotal, liabilityTotal),
+                    const SizedBox(height: 24),
 
-                    // 2. Net Worth Card
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: isDark
-                              ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
-                              : [Colors.white, const Color(0xFFF1F5F9)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: isDark
-                              ? const Color(0xFF334155)
-                              : const Color(0xFFE2E8F0),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.03),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'TOTAL NET WORTH',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1.2,
-                                  color: isDark
-                                      ? AppTheme.darkTextSecondary
-                                      : AppTheme.lightTextSecondary,
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.emeraldGreen.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Text(
-                                  '+5.2%',
-                                  style: TextStyle(
-                                    color: AppTheme.emeraldGreen,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '\$142,850.40',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontSize: 36,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildBalanceIndicator(
-                                  title: 'Monthly Income',
-                                  amount: '\$8,450.00',
-                                  icon: Icons.arrow_upward_rounded,
-                                  iconColor: AppTheme.emeraldGreen,
-                                ),
-                              ),
-                              Container(
-                                width: 1,
-                                height: 40,
-                                color: isDark
-                                    ? const Color(0xFF334155)
-                                    : const Color(0xFFE2E8F0),
-                              ),
-                              Expanded(
-                                child: _buildBalanceIndicator(
-                                  title: 'Monthly Expenses',
-                                  amount: '\$3,120.50',
-                                  icon: Icons.arrow_downward_rounded,
-                                  iconColor: AppTheme.dangerRed,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 32),
+                    // Net Cash Flow summary card
+                    _buildNetCashFlowCard(isDark, totalInflow, totalOutflow, netCashFlow, savingsRate),
+                    const SizedBox(height: 24),
 
-                    // 4. Wealth Growth Chart Title
+                    // Account Balances Stack / swipable list
                     Text(
-                      'Wealth Growth',
+                      'Liquid Accounts & Liabilities',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
-                    const SizedBox(height: 16),
-
-                    // 5. Interactive Line Chart
-                    SizedBox(
-                      height: 200,
-                      child: LineChart(
-                        LineChartData(
-                          gridData: const FlGridData(show: false),
-                          titlesData: const FlTitlesData(show: false),
-                          borderData: FlBorderData(show: false),
-                          minX: 0,
-                          maxX: 7,
-                          minY: 0,
-                          maxY: 6,
-                          lineBarsData: [
-                            LineChartBarData(
-                              spots: const [
-                                FlSpot(0, 3),
-                                FlSpot(1, 2.5),
-                                FlSpot(2, 4),
-                                FlSpot(3, 3.5),
-                                FlSpot(4, 5),
-                                FlSpot(5, 4.5),
-                                FlSpot(6, 5.5),
-                              ],
-                              isCurved: true,
-                              color: AppTheme.emeraldGreen,
-                              barWidth: 4,
-                              isStrokeCapRound: true,
-                              dotData: const FlDotData(show: false),
-                              belowBarData: BarAreaData(
-                                show: true,
-                                gradient: LinearGradient(
-                                  colors: [
-                                    AppTheme.emeraldGreen.withValues(alpha: 0.3),
-                                    AppTheme.emeraldGreen.withValues(alpha: 0.0),
-                                  ],
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    const SizedBox(height: 12),
+                    _buildAccountsCarousel(accounts, isDark),
                     const SizedBox(height: 32),
 
-                    // 6. Recent Transactions List
+                    // Recent Activity list
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Recent Transactions',
+                          'Recent Activity',
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                         ),
-                        TextButton(onPressed: () {}, child: const Text('See All')),
+                        TextButton(
+                          onPressed: () {},
+                          child: const Text('See All'),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    _buildTransactionRow(
-                      context,
-                      title: 'Grocery Store',
-                      subtitle: 'Food & Dining',
-                      amount: '-\$84.50',
-                      date: 'Today, 2:45 PM',
-                      icon: Icons.shopping_basket_rounded,
-                      iconBg: Colors.orange.withValues(alpha: 0.15),
-                      iconColor: Colors.orange,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildTransactionRow(
-                      context,
-                      title: 'Monthly Salary',
-                      subtitle: 'Corporate Deposit',
-                      amount: '+\$4,800.00',
-                      date: 'Yesterday, 9:00 AM',
-                      icon: Icons.work_rounded,
-                      iconBg: Colors.green.withValues(alpha: 0.15),
-                      iconColor: Colors.green,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildTransactionRow(
-                      context,
-                      title: 'Netflix Subscription',
-                      subtitle: 'Entertainment',
-                      amount: '-\$15.49',
-                      date: 'Aug 14, 2026',
-                      icon: Icons.tv_rounded,
-                      iconBg: Colors.red.withValues(alpha: 0.15),
-                      iconColor: Colors.red,
-                    ),
+                    const SizedBox(height: 8),
+                    if (transactions.isEmpty)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 32.0),
+                          child: Text(
+                            'No transactions recorded yet.',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ),
+                      )
+                    else
+                      ...transactions.take(5).map((tx) {
+                        // Find matching category details
+                        final cat = categories.firstWhere(
+                          (c) => c.id == tx.categoryId,
+                          orElse: () => AppCategory(
+                            id: '',
+                            name: tx.flowDirection == 'TRANSFER' ? 'Transfer' : 'Uncategorized',
+                            icon: tx.flowDirection == 'TRANSFER'
+                                ? Icons.swap_horiz_rounded
+                                : Icons.help_outline_rounded,
+                            spent: 0.0,
+                            budget: 0.0,
+                            color: Colors.grey,
+                            categoryType: 'EXPENSE',
+                          ),
+                        );
+
+                        // Find matching account details
+                        final acc = accounts.firstWhere(
+                          (a) => a.id == tx.accountId,
+                          orElse: () => Account(
+                            id: '',
+                            name: 'Unknown Account',
+                            balance: 0.0,
+                            type: 'checking',
+                            color: Colors.grey,
+                          ),
+                        );
+
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: _buildTransactionActivityRow(context, tx, cat, acc, isDark),
+                        );
+                      }),
                   ],
                 ),
               ),
             ),
           ),
 
-          // Translucent Backdrop Overlay when FAB is open
+          // Backdrop Dimming when menu expands
           if (_isMenuOpen)
             GestureDetector(
               onTap: () => setState(() => _isMenuOpen = false),
@@ -305,31 +197,372 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               ),
             ),
 
-          // Draggable/Movable FAB assembly
+          // Draggable / Movable FAB assembly
           ..._buildDraggableFabMenu(context, isDark, size),
         ],
       ),
     );
   }
 
-  void _updateFabPosition(Offset delta, Size screenSize) {
-    setState(() {
-      double newX = _fabPosition.dx + delta.dx;
-      double newY = _fabPosition.dy + delta.dy;
+  Widget _buildNetWorthCard(bool isDark, double netWorth, double liquid, double liability) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark
+              ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+              : [Colors.white, const Color(0xFFF1F5F9)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'TOTAL NET WORTH',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+              color: Colors.grey,
+            ),
+          ),
+          const SizedBox(height: 8),
+          CurrencyDisplay(
+            amount: netWorth,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w900,
+                ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Assets', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                    const SizedBox(height: 4),
+                    CurrencyDisplay(
+                      amount: liquid,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+              Container(width: 1, height: 32, color: Colors.grey.withValues(alpha: 0.3)),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Liabilities', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                    const SizedBox(height: 4),
+                    CurrencyDisplay(
+                      amount: liability,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.dangerRed),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
-      // Define safety margins
-      const double padding = 16.0;
-      final double minX = padding;
-      final double maxX = screenSize.width - 56.0 - padding;
-      
-      final double minY = kToolbarHeight + padding;
-      final double maxY = screenSize.height - 80.0 - padding;
+  Widget _buildNetCashFlowCard(
+    bool isDark,
+    double inflow,
+    double outflow,
+    double net,
+    double savingsRate,
+  ) {
+    final rateColor = net >= 0 ? AppTheme.emeraldGreen : AppTheme.dangerRed;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF161C2A) : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'NET CASH FLOW',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                  color: Colors.grey,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: rateColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '${savingsRate.toStringAsFixed(1)}% savings',
+                  style: TextStyle(
+                    color: rateColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          CurrencyDisplay(
+            amount: net,
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: net >= 0 ? AppTheme.emeraldGreen : AppTheme.dangerRed,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    const Icon(Icons.arrow_downward_rounded, color: AppTheme.emeraldGreen, size: 16),
+                    const SizedBox(width: 8),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Inflow', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                        CurrencyDisplay(
+                          amount: inflow,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Row(
+                  children: [
+                    const Icon(Icons.arrow_upward_rounded, color: AppTheme.dangerRed, size: 16),
+                    const SizedBox(width: 8),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Outflow', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                        CurrencyDisplay(
+                          amount: outflow,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
-      _fabPosition = Offset(
-        newX.clamp(minX, maxX),
-        newY.clamp(minY, maxY),
-      );
-    });
+  Widget _buildAccountsCarousel(List<Account> accounts, bool isDark) {
+    if (accounts.isEmpty) return const SizedBox();
+    return SizedBox(
+      height: 110,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: accounts.length,
+        itemBuilder: (context, idx) {
+          final acc = accounts[idx];
+          return Container(
+            width: 180,
+            margin: const EdgeInsets.only(right: 16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: acc.color,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        acc.name,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      acc.type.toUpperCase(),
+                      style: const TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 4),
+                    CurrencyDisplay(
+                      amount: acc.balance,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 16,
+                        color: acc.type == 'credit' ? AppTheme.dangerRed : null,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildTransactionActivityRow(
+    BuildContext context,
+    dynamic tx,
+    AppCategory cat,
+    Account acc,
+    bool isDark,
+  ) {
+    Color flowColor;
+    String prefix;
+
+    if (tx.flowDirection == 'INFLOW') {
+      flowColor = AppTheme.emeraldGreen;
+      prefix = '+';
+    } else if (tx.flowDirection == 'OUTFLOW') {
+      flowColor = isDark ? Colors.white : Colors.black;
+      prefix = '-';
+    } else {
+      flowColor = const Color(0xFF6366F1);
+      prefix = '';
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF161C2A) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Row(
+        children: [
+          // Category Icon
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: cat.color.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(cat.icon, color: cat.color, size: 20),
+          ),
+          const SizedBox(width: 16),
+
+          // Description & Account
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  tx.description ?? cat.name,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Text(
+                      acc.name,
+                      style: const TextStyle(fontSize: 11, color: Colors.grey),
+                    ),
+                    if (tx.flowDirection == 'TRANSFER') ...[
+                      const Icon(Icons.arrow_right_alt_rounded, size: 12, color: Colors.grey),
+                      Text(
+                        tx.transferTargetAccountId ?? 'Target',
+                        style: const TextStyle(fontSize: 11, color: Colors.grey),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Amount
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    prefix,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: flowColor),
+                  ),
+                  CurrencyDisplay(
+                    amount: tx.amount,
+                    showSign: false,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: flowColor),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                tx.timestamp.toIso8601String().substring(0, 10),
+                style: const TextStyle(fontSize: 10, color: Colors.grey),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   List<Widget> _buildDraggableFabMenu(BuildContext context, bool isDark, Size screenSize) {
@@ -337,35 +570,16 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
     final items = [
       _FabItem(
-        icon: Icons.send_rounded,
-        label: 'Record Expense',
-        color: AppTheme.dangerRed,
-        onTap: () {
-          setState(() => _isMenuOpen = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Send Money selected')),
-          );
-        },
-      ),
-      _FabItem(
-        icon: Icons.call_received_rounded,
-        label: 'Receive Money',
+        icon: Icons.add_rounded,
+        label: 'Add Transaction',
         color: AppTheme.emeraldGreen,
         onTap: () {
           setState(() => _isMenuOpen = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Receive Money selected')),
-          );
-        },
-      ),
-      _FabItem(
-        icon: Icons.swap_horiz_rounded,
-        label: 'Account Transfer',
-        color: AppTheme.neonBlue,
-        onTap: () {
-          setState(() => _isMenuOpen = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Account Transfer selected')),
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (ctx) => const AddTransactionModal(),
           );
         },
       ),
@@ -373,7 +587,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
     List<Widget> stackChildren = [];
 
-    // Add child options if menu is open
     if (_isMenuOpen) {
       for (int i = 0; i < items.length; i++) {
         final item = items[i];
@@ -426,7 +639,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       }
     }
 
-    // Add main FAB
     stackChildren.add(
       Positioned(
         left: _fabPosition.dx,
@@ -458,108 +670,23 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     return stackChildren;
   }
 
-  Widget _buildBalanceIndicator({
-    required String title,
-    required String amount,
-    required IconData icon,
-    required Color iconColor,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 16, color: iconColor),
-            const SizedBox(width: 4),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          amount,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-      ],
-    );
-  }
+  void _updateFabPosition(Offset delta, Size screenSize) {
+    setState(() {
+      double newX = _fabPosition.dx + delta.dx;
+      double newY = _fabPosition.dy + delta.dy;
 
-  Widget _buildTransactionRow(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required String amount,
-    required String date,
-    required IconData icon,
-    required Color iconBg,
-    required Color iconColor,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isIncome = amount.startsWith('+');
+      const double padding = 16.0;
+      final double minX = padding;
+      final double maxX = screenSize.width - 56.0 - padding;
+      
+      final double minY = kToolbarHeight + padding;
+      final double maxY = screenSize.height - 80.0 - padding;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF161C2A) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
-            child: Icon(icon, color: iconColor, size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                amount,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                  color: isIncome
-                      ? AppTheme.emeraldGreen
-                      : (isDark ? Colors.white : Colors.black),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                date,
-                style: const TextStyle(fontSize: 11, color: Colors.grey),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+      _fabPosition = Offset(
+        newX.clamp(minX, maxX),
+        newY.clamp(minY, maxY),
+      );
+    });
   }
 }
 

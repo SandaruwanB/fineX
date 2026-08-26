@@ -86,6 +86,13 @@ class MainDrawer extends ConsumerWidget {
                 ),
                 _buildDrawerItem(
                   context: context,
+                  icon: Icons.analytics_rounded,
+                  title: 'Cash Flow Analytics',
+                  route: '/analytics',
+                  isActive: activeRoute == '/analytics',
+                ),
+                _buildDrawerItem(
+                  context: context,
                   icon: Icons.settings_rounded,
                   title: 'Settings',
                   route: '/settings',
