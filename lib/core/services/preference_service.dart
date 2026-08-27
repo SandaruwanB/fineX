@@ -11,6 +11,7 @@ class PreferenceService {
   static const String _keyThemeMode = 'theme_mode';
   static const String _keyPrivacyMode = 'privacy_mode';
   static const String _keyBaseCurrency = 'base_currency';
+  static const String _keyAutoLock = 'auto_lock_background';
 
   bool get isOnboardingCompleted =>
       _prefs.getBool(_keyOnboardingCompleted) ?? false;
@@ -45,6 +46,13 @@ class PreferenceService {
 
   Future<void> setBaseCurrency(String currency) async {
     await _prefs.setString(_keyBaseCurrency, currency);
+  }
+
+  bool get isAutoLockEnabled =>
+      _prefs.getBool(_keyAutoLock) ?? false;
+
+  Future<void> setAutoLockEnabled(bool enabled) async {
+    await _prefs.setBool(_keyAutoLock, enabled);
   }
 
   Future<void> clear() async {
@@ -92,4 +100,21 @@ class BaseCurrencyNotifier extends StateNotifier<String> {
 final baseCurrencyProvider = StateNotifierProvider<BaseCurrencyNotifier, String>((ref) {
   final prefService = ref.watch(preferenceServiceProvider);
   return BaseCurrencyNotifier(prefService);
+});
+
+class AutoLockNotifier extends StateNotifier<bool> {
+  final PreferenceService _prefService;
+
+  AutoLockNotifier(this._prefService) : super(_prefService.isAutoLockEnabled);
+
+  Future<void> toggleAutoLock() async {
+    final newState = !state;
+    await _prefService.setAutoLockEnabled(newState);
+    state = newState;
+  }
+}
+
+final autoLockProvider = StateNotifierProvider<AutoLockNotifier, bool>((ref) {
+  final prefService = ref.watch(preferenceServiceProvider);
+  return AutoLockNotifier(prefService);
 });

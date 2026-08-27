@@ -6,6 +6,7 @@ import 'core/routing/app_router.dart';
 import 'core/services/preference_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
+import 'features/auth/auth_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,6 +43,47 @@ class FineXApp extends ConsumerWidget {
 
       // Routing configurations
       routerConfig: router,
+      builder: (context, child) {
+        return AppLifecycleObserver(child: child!);
+      },
     );
+  }
+}
+
+class AppLifecycleObserver extends ConsumerStatefulWidget {
+  final Widget child;
+
+  const AppLifecycleObserver({super.key, required this.child});
+
+  @override
+  ConsumerState<AppLifecycleObserver> createState() => _AppLifecycleObserverState();
+}
+
+class _AppLifecycleObserverState extends ConsumerState<AppLifecycleObserver> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      final isAutoLockEnabled = ref.read(autoLockProvider);
+      if (isAutoLockEnabled) {
+        ref.read(authProvider.notifier).logout();
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.child;
   }
 }

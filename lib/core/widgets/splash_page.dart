@@ -41,10 +41,12 @@ class SplashPage extends StatelessWidget {
                                         )
                                     ],
                                 ),
-                                child: const Icon(
-                                    Icons.account_balance_wallet_rounded,
-                                    size: 40,
-                                    color: Colors.white,
+                                child: Padding(
+                                    padding: const EdgeInsets.all(12.0),
+                                    child: Image.asset(
+                                        'finex logo.png',
+                                        fit: BoxFit.contain,
+                                    ),
                                 ),
                             ),
                             const SizedBox(height: 24),

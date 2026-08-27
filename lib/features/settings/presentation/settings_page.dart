@@ -52,6 +52,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final themeMode = ref.watch(themeProvider);
     final isDark = themeMode == ThemeMode.dark;
     final baseCurrency = ref.watch(baseCurrencyProvider);
+    final isAutoLockEnabled = ref.watch(autoLockProvider);
 
     return Scaffold(
       key: _scaffoldKey,
@@ -144,6 +145,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 secondary: const Icon(Icons.fingerprint_rounded),
                 title: const Text('Biometric Authentication'),
                 subtitle: const Text('Unlock app using Fingerprint / Face ID'),
+              ),
+              const Divider(indent: 16, endIndent: 16),
+              SwitchListTile(
+                value: isAutoLockEnabled,
+                onChanged: (val) {
+                  ref.read(autoLockProvider.notifier).toggleAutoLock();
+                },
+                secondary: const Icon(Icons.timer_rounded),
+                title: const Text('Auto-Lock on Background'),
+                subtitle: const Text('Lock wallet immediately when minimized'),
               ),
               const Divider(indent: 16, endIndent: 16),
               ListTile(
