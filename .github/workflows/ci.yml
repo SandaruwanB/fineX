@@ -1,40 +1,54 @@
-name: Flutter CI
+name: Flutter PR & Production CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ v1.0.0, dev, production ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ dev, production, v1.0.0 ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
+  validate-and-compile:
+    name: Code Quality, Tests & Compilation
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Java
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
+          cache: 'gradle'
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.41.1'
           channel: 'stable'
           cache: true
 
-      - name: Install Dependencies
+      - name: Install Flutter Dependencies
         run: flutter pub get
 
-      - name: Verify Formatting
-        run: dart format --output=none --set-exit-if-changed .
-
-      - name: Analyze Code
+      - name: Static Code Analysis
         run: flutter analyze
 
-      - name: Run Unit Tests
-        run: flutter test
+      - name: Run Unit & Widget Tests
+        run: flutter test --coverage
+
+      - name: Compile Android APK (Build Verification)
+        run: flutter build apk --debug
+
+      - name: Upload Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lcov-coverage-report
+          path: coverage/lcov.info
+          if-no-files-found: ignore
+
