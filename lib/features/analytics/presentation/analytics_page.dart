@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/currency_display.dart';
 import '../../../core/widgets/fade_slide_transition.dart';
+import '../../../core/widgets/drawer_blur_wrapper.dart';
 import '../../../core/widgets/main_drawer.dart';
 import '../../categories/categories_provider.dart';
 import '../../transactions/transactions_provider.dart';
@@ -19,6 +20,7 @@ class AnalyticsPage extends ConsumerStatefulWidget {
 class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
   String _selectedTab = 'EXPENSE'; // 'EXPENSE' | 'INCOME'
   int _touchedIndex = -1;
+  bool _isDrawerOpen = false;
 
   @override
   Widget build(BuildContext context) {
@@ -71,6 +73,12 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
       },
       child: Scaffold(
         drawer: const MainDrawer(activeRoute: '/analytics'),
+        drawerScrimColor: (isDark ? Colors.black : const Color(0xFF0F172A)).withValues(alpha: 0.45),
+        onDrawerChanged: (isOpen) {
+          if (_isDrawerOpen != isOpen) {
+            setState(() => _isDrawerOpen = isOpen);
+          }
+        },
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
@@ -84,7 +92,9 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
           ),
           title: const Text('Analytics'),
         ),
-      body: SafeArea(
+      body: DrawerBlurWrapper(
+        isDrawerOpen: _isDrawerOpen,
+        child: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
@@ -132,6 +142,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
           ),
         ),
       ),
+    ),
     ));
   }
 

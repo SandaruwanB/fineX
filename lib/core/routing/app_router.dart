@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -15,79 +16,99 @@ import '../../features/settings/presentation/settings_page.dart';
 import '../../features/analytics/presentation/analytics_page.dart';
 import '../../features/tax/presentation/tax_page.dart';
 
-final routerProvider = Provider<GoRouter>((ref) {
-    final authState = ref.watch(authProvider);
+class RouterNotifier extends ChangeNotifier {
+  final Ref _ref;
 
-    return GoRouter(
-        initialLocation: '/splash',
-        routes: [
-            GoRoute(path: '/splash', builder: (context, state) => const SplashPage()),
-            GoRoute(
-                path: '/onboarding',
-                builder: (context, state) => const OnboardingPage(),
-            ),
-            GoRoute(
-                path: '/pin-setup',
-                builder: (context, state) => const PinSetupPage(),
-            ),
-            GoRoute(
-                path: '/biometrics-setup',
-                builder: (context, state) => const BiometricsSetupPage(),
-            ),
-            GoRoute(path: '/lock', builder: (context, state) => const LockPage()),
-            GoRoute(
-                path: '/dashboard',
-                builder: (context, state) => const DashboardPage(),
-            ),
-            GoRoute(
-                path: '/accounts',
-                builder: (context, state) => const AccountsPage(),
-            ),
-            GoRoute(
-                path: '/categories',
-                builder: (context, state) => const CategoriesPage(),
-            ),
-            GoRoute(
-                path: '/analytics',
-                builder: (context, state) => const AnalyticsPage(),
-            ),
-            GoRoute(
-                path: '/tax',
-                builder: (context, state) => const TaxPage(),
-            ),
-            GoRoute(
-                path: '/settings',
-                builder: (context, state) => const SettingsPage(),
-            ),
-        ],
-        redirect: (context, state) {
-            if (authState.isLoading) {
-                return '/splash';
-            }
-
-            final isOnboarding = state.matchedLocation == '/onboarding';
-            final isPinSetup = state.matchedLocation == '/pin-setup';
-            final isBiometricsSetup = state.matchedLocation == '/biometrics-setup';
-            final isLock = state.matchedLocation == '/lock';
-            final isSplash = state.matchedLocation == '/splash';
-
-            if (!authState.isOnboardingCompleted) {
-                return isOnboarding ? null : '/onboarding';
-            }
-
-            if (!authState.isPinSetup) {
-                return (isPinSetup || isBiometricsSetup) ? null : '/pin-setup';
-            }
-
-            if (!authState.isAuthenticated) {
-                return isLock ? null : '/lock';
-            }
-
-            if (isOnboarding || isPinSetup || isLock || isSplash) {
-                return '/dashboard';
-            }
-
-            return null;
-        },
+  RouterNotifier(this._ref) {
+    _ref.listen<AuthState>(
+      authProvider,
+      (previous, next) => notifyListeners(),
     );
+  }
+
+  String? redirect(BuildContext context, GoRouterState state) {
+    final authState = _ref.read(authProvider);
+
+    if (authState.isLoading) {
+      return '/splash';
+    }
+
+    final isOnboarding = state.matchedLocation == '/onboarding';
+    final isPinSetup = state.matchedLocation == '/pin-setup';
+    final isBiometricsSetup = state.matchedLocation == '/biometrics-setup';
+    final isLock = state.matchedLocation == '/lock';
+    final isSplash = state.matchedLocation == '/splash';
+
+    if (!authState.isOnboardingCompleted) {
+      return isOnboarding ? null : '/onboarding';
+    }
+
+    if (!authState.isPinSetup) {
+      return (isPinSetup || isBiometricsSetup) ? null : '/pin-setup';
+    }
+
+    if (!authState.isAuthenticated) {
+      return isLock ? null : '/lock';
+    }
+
+    if (isOnboarding || isPinSetup || isLock || isSplash) {
+      return '/dashboard';
+    }
+
+    return null;
+  }
+}
+
+final routerNotifierProvider = Provider<RouterNotifier>((ref) {
+  return RouterNotifier(ref);
+});
+
+final routerProvider = Provider<GoRouter>((ref) {
+  final notifier = ref.watch(routerNotifierProvider);
+
+  return GoRouter(
+    initialLocation: '/splash',
+    refreshListenable: notifier,
+    redirect: notifier.redirect,
+    routes: [
+      GoRoute(path: '/splash', builder: (context, state) => const SplashPage()),
+      GoRoute(
+        path: '/onboarding',
+        builder: (context, state) => const OnboardingPage(),
+      ),
+      GoRoute(
+        path: '/pin-setup',
+        builder: (context, state) => const PinSetupPage(),
+      ),
+      GoRoute(
+        path: '/biometrics-setup',
+        builder: (context, state) => const BiometricsSetupPage(),
+      ),
+      GoRoute(path: '/lock', builder: (context, state) => const LockPage()),
+      GoRoute(
+        path: '/dashboard',
+        builder: (context, state) => const DashboardPage(),
+      ),
+      GoRoute(
+        path: '/accounts',
+        builder: (context, state) => const AccountsPage(),
+      ),
+      GoRoute(
+        path: '/categories',
+        builder: (context, state) => const CategoriesPage(),
+      ),
+      GoRoute(
+        path: '/analytics',
+        builder: (context, state) => const AnalyticsPage(),
+      ),
+      GoRoute(
+        path: '/tax',
+        builder: (context, state) => const TaxPage(),
+      ),
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) => const SettingsPage(),
+      ),
+    ],
+  );
 });

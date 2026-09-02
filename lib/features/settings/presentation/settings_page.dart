@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../core/widgets/main_drawer.dart';
+import '../../../core/widgets/drawer_blur_wrapper.dart';
 import '../../auth/auth_provider.dart';
 import '../../../core/services/local_auth_service.dart';
 import '../../../core/services/backup_service.dart';
@@ -20,6 +21,7 @@ class SettingsPage extends ConsumerStatefulWidget {
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _isDrawerOpen = false;
 
   Future<void> _toggleBiometrics(bool enabled) async {
     final authNotifier = ref.read(authProvider.notifier);
@@ -70,6 +72,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       child: Scaffold(
         key: _scaffoldKey,
         drawer: const MainDrawer(activeRoute: '/settings'),
+        drawerScrimColor: (isDark ? Colors.black : const Color(0xFF0F172A)).withValues(alpha: 0.45),
+        onDrawerChanged: (isOpen) {
+          if (_isDrawerOpen != isOpen) {
+            setState(() => _isDrawerOpen = isOpen);
+          }
+        },
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
@@ -83,7 +91,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ),
           title: const Text('Settings'),
         ),
-      body: SafeArea(
+      body: DrawerBlurWrapper(
+        isDrawerOpen: _isDrawerOpen,
+        child: SafeArea(
         child: ListView(
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
@@ -122,18 +132,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                             const Text(
                               'Sandaruwan B.',
                               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: AppTheme.emeraldGreen.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: const Text(
-                                'PRO',
-                                style: TextStyle(color: AppTheme.emeraldGreen, fontSize: 9, fontWeight: FontWeight.w900),
-                              ),
                             ),
                           ],
                         ),
@@ -230,7 +228,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 subtitle: const Text('Update your local security code', style: TextStyle(fontSize: 12)),
                 trailing: const Icon(Icons.chevron_right_rounded, size: 20, color: Colors.grey),
                 onTap: () {
-                  context.push('/pin-setup');
+                  _showChangePinDialog(context);
                 },
               ),
             ]),
@@ -243,7 +241,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ListTile(
                 leading: _buildSettingIcon(Icons.upload_file_rounded, AppTheme.neonBlue, isDark),
                 title: const Text('Export Encrypted Backup (.zip)', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-                subtitle: const Text('Save SQLite ledger database archive', style: TextStyle(fontSize: 12)),
+                subtitle: const Text('Save database current snapshot archive', style: TextStyle(fontSize: 12)),
                 trailing: const Icon(Icons.chevron_right_rounded, size: 20, color: Colors.grey),
                 onTap: () async {
                   final success = await BackupService.exportBackup(context);
@@ -302,6 +300,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ],
         ),
       ),
+    ),
     ));
   }
 
@@ -463,6 +462,260 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
+  void _showChangePinDialog(BuildContext context) {
+    int currentStep = 1; // 1: Old PIN, 2: New PIN, 3: Confirm PIN
+    String oldPin = '';
+    String newPin = '';
+    final pinController = TextEditingController();
+    String? errorMessage;
+    bool isProcessing = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+
+          String stepTitle;
+          String stepSubtitle;
+          String buttonText;
+
+          if (currentStep == 1) {
+            stepTitle = 'Enter Current PIN';
+            stepSubtitle = 'Verify your existing 4-digit Master PIN to proceed';
+            buttonText = 'Verify PIN';
+          } else if (currentStep == 2) {
+            stepTitle = 'Enter New PIN';
+            stepSubtitle = 'Choose a new 4-digit security code';
+            buttonText = 'Next';
+          } else {
+            stepTitle = 'Confirm New PIN';
+            stepSubtitle = 'Re-enter your new 4-digit PIN to confirm';
+            buttonText = 'Update PIN';
+          }
+
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.emeraldGreen.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.password_rounded, color: AppTheme.emeraldGreen, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        stepTitle,
+                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+                      ),
+                      Text(
+                        'Step $currentStep of 3',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.emeraldGreen,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            content: SizedBox(
+              width: 320,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    stepSubtitle,
+                    style: const TextStyle(fontSize: 13, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: pinController,
+                    keyboardType: TextInputType.number,
+                    obscureText: true,
+                    maxLength: 4,
+                    autofocus: true,
+                    style: const TextStyle(
+                      letterSpacing: 10,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                    ),
+                    textAlign: TextAlign.center,
+                    decoration: InputDecoration(
+                      counterText: '',
+                      hintText: '••••',
+                      hintStyle: const TextStyle(letterSpacing: 10),
+                      prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                          color: errorMessage != null
+                              ? AppTheme.dangerRed
+                              : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                          color: errorMessage != null ? AppTheme.dangerRed : AppTheme.emeraldGreen,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                    onChanged: (_) {
+                      if (errorMessage != null) {
+                        setDialogState(() => errorMessage = null);
+                      }
+                    },
+                  ),
+                  if (errorMessage != null) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        const Icon(Icons.error_outline_rounded, size: 16, color: AppTheme.dangerRed),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            errorMessage!,
+                            style: const TextStyle(
+                              color: AppTheme.dangerRed,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isProcessing ? null : () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: isProcessing
+                    ? null
+                    : () async {
+                        final entered = pinController.text.trim();
+                        if (entered.length != 4) {
+                          setDialogState(() {
+                            errorMessage = 'Please enter a valid 4-digit code.';
+                          });
+                          return;
+                        }
+
+                        if (currentStep == 1) {
+                          // Step 1: Verify Old PIN
+                          setDialogState(() {
+                            isProcessing = true;
+                            errorMessage = null;
+                          });
+                          final isValid = await ref.read(authProvider.notifier).checkCurrentPin(entered);
+                          if (!isValid) {
+                            setDialogState(() {
+                              isProcessing = false;
+                              errorMessage = 'Incorrect current PIN. Please try again.';
+                            });
+                            return;
+                          }
+                          oldPin = entered;
+                          pinController.clear();
+                          setDialogState(() {
+                            isProcessing = false;
+                            currentStep = 2;
+                            errorMessage = null;
+                          });
+                        } else if (currentStep == 2) {
+                          // Step 2: Enter New PIN
+                          if (entered == oldPin) {
+                            setDialogState(() {
+                              errorMessage = 'New PIN must be different from the old PIN.';
+                            });
+                            return;
+                          }
+                          newPin = entered;
+                          pinController.clear();
+                          setDialogState(() {
+                            currentStep = 3;
+                            errorMessage = null;
+                          });
+                        } else if (currentStep == 3) {
+                          // Step 3: Confirm New PIN
+                          if (entered != newPin) {
+                            setDialogState(() {
+                              errorMessage = 'PINs do not match. Please re-enter.';
+                            });
+                            return;
+                          }
+                          setDialogState(() {
+                            isProcessing = true;
+                            errorMessage = null;
+                          });
+
+                          await ref.read(authProvider.notifier).savePin(newPin);
+
+                          if (ctx.mounted) {
+                            Navigator.pop(ctx);
+                          }
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Row(
+                                  children: [
+                                    Icon(Icons.check_circle_rounded, color: AppTheme.emeraldGreen, size: 20),
+                                    SizedBox(width: 8),
+                                    Text('Master PIN updated successfully!'),
+                                  ],
+                                ),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                duration: const Duration(seconds: 3),
+                              ),
+                            );
+                          }
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.emeraldGreen,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                ),
+                child: isProcessing
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : Text(
+                        buttonText,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   void _showResetDialog(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final pinController = TextEditingController();
@@ -604,7 +857,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           errorMessage = null;
                         });
 
-                        final isValid = await ref.read(authProvider.notifier).verifyPin(enteredPin);
+                        final isValid = await ref.read(authProvider.notifier).checkCurrentPin(enteredPin);
                         if (!isValid) {
                           setDialogState(() {
                             isProcessing = false;

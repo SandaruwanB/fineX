@@ -323,17 +323,8 @@ class MainDrawer extends ConsumerWidget {
                                     Row(
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
-                                            Container(
-                                                width: 6,
-                                                height: 6,
-                                                decoration: const BoxDecoration(
-                                                    color: AppTheme.emeraldGreen,
-                                                    shape: BoxShape.circle,
-                                                ),
-                                            ),
-                                            const SizedBox(width: 6),
                                             Text(
-                                                'fineX v1.0.0 (Build 1)',
+                                                'fineX v1.0.0',
                                                 style: TextStyle(
                                                     fontSize: 11,
                                                     fontWeight: FontWeight.w600,
