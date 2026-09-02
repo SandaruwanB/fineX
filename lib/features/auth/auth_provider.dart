@@ -73,7 +73,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> savePin(String pin) async {
     await _secureStorageService.savePin(pin);
-    state = state.copyWith(isPinSetup: true);
+    if (!state.isPinSetup) {
+      state = state.copyWith(isPinSetup: true);
+    }
   }
 
   Future<void> setBiometricsEnabled(bool enabled) async {
@@ -82,20 +84,31 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   void authenticateSession(bool authenticated) {
-    state = state.copyWith(isAuthenticated: authenticated);
+    if (state.isAuthenticated != authenticated) {
+      state = state.copyWith(isAuthenticated: authenticated);
+    }
+  }
+
+  Future<bool> checkCurrentPin(String enteredPin) async {
+    final savedPin = await _secureStorageService.getPin();
+    return savedPin != null && savedPin == enteredPin;
   }
 
   Future<bool> verifyPin(String enteredPin) async {
     final savedPin = await _secureStorageService.getPin();
-    if (savedPin == enteredPin) {
-      authenticateSession(true);
+    if (savedPin != null && savedPin == enteredPin) {
+      if (!state.isAuthenticated) {
+        authenticateSession(true);
+      }
       return true;
     }
     return false;
   }
 
   Future<void> logout() async {
-    state = state.copyWith(isAuthenticated: false);
+    if (state.isAuthenticated) {
+      state = state.copyWith(isAuthenticated: false);
+    }
   }
 
   Future<void> resetAll() async {
