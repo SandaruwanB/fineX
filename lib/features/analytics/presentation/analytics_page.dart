@@ -1,8 +1,10 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/currency_display.dart';
+import '../../../core/widgets/fade_slide_transition.dart';
 import '../../../core/widgets/main_drawer.dart';
 import '../../categories/categories_provider.dart';
 import '../../transactions/transactions_provider.dart';
@@ -24,17 +26,14 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
     final transactions = ref.watch(transactionsProvider);
     final categories = ref.watch(categoriesProvider);
 
-    // Compute range parameters (last 30 days)
     final now = DateTime.now();
     final thirtyDaysAgo = now.subtract(const Duration(days: 30));
 
-    // Filter relevant transactions
     final periodTransactions = transactions.where((tx) => tx.timestamp.isAfter(thirtyDaysAgo)).toList();
 
     double totalInflow = 0.0;
     double totalOutflow = 0.0;
     
-    // Map category ID to split sum allocation
     final Map<String, double> categorySums = {};
 
     for (var tx in periodTransactions) {
@@ -44,7 +43,6 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
         totalOutflow += tx.amount;
       }
 
-      // Sum allocations matching the selected tab
       if (tx.flowDirection == _selectedTab) {
         if (tx.splits.isEmpty) {
           final catId = tx.categoryId ?? '';
@@ -60,17 +58,32 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
 
     final double activeTotal = _selectedTab == 'EXPENSE' ? totalOutflow : totalInflow;
 
-    return Scaffold(
-      drawer: const MainDrawer(activeRoute: '/analytics'),
-      appBar: AppBar(
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu_rounded),
-            onPressed: () => Scaffold.of(context).openDrawer(),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/dashboard');
+          }
+        }
+      },
+      child: Scaffold(
+        drawer: const MainDrawer(activeRoute: '/analytics'),
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/dashboard');
+              }
+            },
           ),
+          title: const Text('Analytics'),
         ),
-        title: const Text('Analytics'),
-      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -78,41 +91,48 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Net cash flow period metric card
-                _buildCashComparisonCard(isDark, totalInflow, totalOutflow),
+                FadeSlideTransition(
+                  delay: Duration.zero,
+                  child: _buildCashComparisonCard(isDark, totalInflow, totalOutflow),
+                ),
                 const SizedBox(height: 32),
 
-                // Selector tabs
-                _buildTabsSelector(isDark),
-                const SizedBox(height: 24),
-
-                // Interactive Donut Chart section
-                if (activeTotal <= 0)
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 64.0),
-                      child: Text(
-                        'No transactions recorded for this period.',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ),
-                  )
-                else ...[
-                  Text(
-                    '${_selectedTab == 'EXPENSE' ? 'Expense' : 'Income'} Share Breakdown',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                FadeSlideTransition(
+                  delay: const Duration(milliseconds: 70),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildTabsSelector(isDark),
+                      const SizedBox(height: 24),
+                      if (activeTotal <= 0)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 64.0),
+                            child: Text(
+                              'No transactions recorded for this period.',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ),
+                        )
+                      else ...[
+                        Text(
+                          '${_selectedTab == 'EXPENSE' ? 'Expense' : 'Income'} Share Breakdown',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildDonutChart(categorySums, categories, activeTotal),
+                        const SizedBox(height: 32),
+                        _buildDonutLegend(categorySums, categories, activeTotal, isDark),
+                      ],
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  _buildDonutChart(categorySums, categories, activeTotal),
-                  const SizedBox(height: 32),
-                  _buildDonutLegend(categorySums, categories, activeTotal, isDark),
-                ],
+                ),
               ],
             ),
           ),
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildCashComparisonCard(bool isDark, double inflow, double outflow) {

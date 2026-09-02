@@ -65,7 +65,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     return Scaffold(
       body: Stack(
         children: [
-          // Background subtle gradients for premium visual feel
           Positioned(
             top: -100,
             right: -100,
@@ -127,10 +126,11 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                               ),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(
-                              Icons.account_balance_wallet_rounded,
-                              size: 16,
-                              color: Colors.white,
+                            child: Image.asset(
+                              'finex logo.png',
+                              width: 16,
+                              height: 16,
+                              fit: BoxFit.contain,
                             ),
                           ),
                           const SizedBox(width: 8),

@@ -65,28 +65,27 @@ class AccountsNotifier extends StateNotifier<List<Account>> {
       name: 'Chase Checking',
       balance: 14250.40,
       type: 'checking',
-      color: const Color(0xFF10B981), // Emerald
+      color: const Color(0xFF10B981),
     ),
     Account(
       id: '2',
       name: 'Ally Savings',
       balance: 85000.00,
       type: 'savings',
-      color: const Color(0xFF3B82F6), // Blue
+      color: const Color(0xFF3B82F6),
     ),
     Account(
       id: '3',
       name: 'Amex Gold Card',
       balance: -1240.20,
       type: 'credit',
-      color: const Color(0xFFF59E0B), // Gold/Amber
+      color: const Color(0xFFF59E0B),
     ),
   ];
 
   Future<void> loadAccounts() async {
     final list = await DbHelper.getAccounts();
     if (list.isEmpty) {
-      // First launch, populate defaults in SQLite database
       for (var acc in _initialAccounts) {
         await DbHelper.insertAccount(acc.toMap());
       }

@@ -95,7 +95,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
-    // Session logout, doesn't clear stored PIN/preferences
     state = state.copyWith(isAuthenticated: false);
   }
 

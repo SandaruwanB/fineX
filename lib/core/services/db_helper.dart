@@ -3,29 +3,29 @@ import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
 class DbHelper {
-  static Database? _database;
+    static Database? _database;
 
-  static Future<Database> get database async {
-    if (_database != null) return _database!;
-    _database = await _initDatabase();
-    return _database!;
-  }
+    static Future<Database> get database async {
+        if (_database != null) return _database!;
+        _database = await _initDatabase();
+        return _database!;
+    }
 
-  static Future<Database> _initDatabase() async {
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, 'finex.db');
+    static Future<Database> _initDatabase() async {
+        final dbPath = await getDatabasesPath();
+        final path = join(dbPath, 'finex.db');
 
-    return await openDatabase(
-      path,
-      version: 2,
-      onCreate: _onCreate,
-      onUpgrade: _onUpgrade,
-      onOpen: (db) async {
-        // Enforce SQLite Foreign Key constraints
-        await db.execute('PRAGMA foreign_keys = ON');
-      },
-    );
-  }
+        return await openDatabase(
+            path,
+            version: 2,
+            onCreate: _onCreate,
+            onUpgrade: _onUpgrade,
+            onOpen: (db) async {
+                // SQLite fk constraints enhance
+                await db.execute('PRAGMA foreign_keys = ON');
+            },
+        );
+    }
 
   static Future<void> _onCreate(Database db, int version) async {
     // Accounts Table

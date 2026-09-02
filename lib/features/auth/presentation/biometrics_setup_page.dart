@@ -20,12 +20,10 @@ class BiometricsSetupPage extends ConsumerWidget {
       if (success) {
         await authNotifier.setBiometricsEnabled(true);
       }
-      // Navigate to Dashboard
       authNotifier.authenticateSession(true);
     }
 
     void skipBiometrics() {
-      // Just mark authenticated to enter dashboard
       authNotifier.authenticateSession(true);
     }
 
@@ -37,7 +35,6 @@ class BiometricsSetupPage extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Spacer(),
-              // Double icon indicator (Fingerprint + Face ID)
               Container(
                 width: 140,
                 height: 140,
@@ -82,7 +79,6 @@ class BiometricsSetupPage extends ConsumerWidget {
                 ).textTheme.bodyMedium?.copyWith(fontSize: 15, height: 1.5),
               ),
               const Spacer(),
-              // Action Buttons
               Column(
                 children: [
                   ElevatedButton(

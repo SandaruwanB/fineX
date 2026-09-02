@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../auth_provider.dart';
@@ -15,11 +16,11 @@ class _LockPageState extends ConsumerState<LockPage> {
   String _enteredPin = '';
   String _errorMessage = '';
   bool _isAuthenticating = false;
+  DateTime? _lastBackPressTime;
 
   @override
   void initState() {
     super.initState();
-    // Auto-trigger biometrics on load if enabled
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _autoBiometricAuth();
     });
@@ -90,13 +91,33 @@ class _LockPageState extends ConsumerState<LockPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(authProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        final now = DateTime.now();
+        if (_lastBackPressTime == null || now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
+          _lastBackPressTime = now;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Press back again to exit fineX'),
+              duration: const Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFF0F172A),
+            ),
+          );
+        } else {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
       body: SafeArea(
         child: Column(
           children: [
             const Spacer(flex: 1),
-            // Header Section
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
@@ -133,7 +154,6 @@ class _LockPageState extends ConsumerState<LockPage> {
             ),
             const SizedBox(height: 40),
 
-            // PIN Dot Indicators
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(4, (index) {
@@ -159,7 +179,6 @@ class _LockPageState extends ConsumerState<LockPage> {
               }),
             ),
 
-            // Error Message
             Container(
               height: 40,
               alignment: Alignment.center,
@@ -175,7 +194,6 @@ class _LockPageState extends ConsumerState<LockPage> {
             ),
             const Spacer(flex: 1),
 
-            // Numeric Keypad
             Padding(
               padding: const EdgeInsets.only(bottom: 24, left: 32, right: 32),
               child: Column(
@@ -198,7 +216,6 @@ class _LockPageState extends ConsumerState<LockPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      // Biometrics Icon Button (or Empty Spacer if disabled)
                       state.isBiometricsEnabled
                           ? _buildActionButton(
                               icon: Icons.fingerprint_rounded,
@@ -220,7 +237,7 @@ class _LockPageState extends ConsumerState<LockPage> {
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildKey(String value) {

@@ -63,6 +63,7 @@ class AppCategory {
     return AppCategory(
       id: map['id'] as String,
       name: map['name'] as String,
+      // ignore: non_const_argument_for_const_parameter
       icon: IconData(map['icon'] as int, fontFamily: 'MaterialIcons'),
       budget: (map['budget'] as num).toDouble(),
       spent: (map['spent'] as num).toDouble(),
@@ -79,7 +80,6 @@ class CategoriesNotifier extends StateNotifier<List<AppCategory>> {
   }
 
   static final List<AppCategory> _initialCategories = [
-    // --- Outflows (EXPENSE) ---
     AppCategory(
       id: 'housing',
       name: 'Housing',
@@ -104,7 +104,7 @@ class CategoriesNotifier extends StateNotifier<List<AppCategory>> {
       icon: Icons.directions_car_rounded,
       budget: 400.0,
       spent: 0.0,
-      color: const Color(0xFF8B5CF6), // Purple
+      color: const Color(0xFF8B5CF6), 
       categoryType: 'EXPENSE',
     ),
     AppCategory(
@@ -126,7 +126,6 @@ class CategoriesNotifier extends StateNotifier<List<AppCategory>> {
       categoryType: 'EXPENSE',
     ),
 
-    // --- Inflows (INCOME) ---
     AppCategory(
       id: 'earned_income',
       name: 'Earned Income',
@@ -170,7 +169,6 @@ class CategoriesNotifier extends StateNotifier<List<AppCategory>> {
   Future<void> loadCategories() async {
     final list = await DbHelper.getCategories();
     if (list.isEmpty) {
-      // First launch: Seed initial categories hierarchy in order (parents first, then children)
       final roots = _initialCategories.where((c) => c.parentId == null).toList();
       final children = _initialCategories.where((c) => c.parentId != null).toList();
 

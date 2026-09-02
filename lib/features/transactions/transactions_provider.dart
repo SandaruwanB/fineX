@@ -35,6 +35,7 @@ class TransactionsNotifier extends StateNotifier<List<Transaction>> {
     required double exchangeRate,
     required DateTime timestamp,
     String? description,
+    bool isTaxDeductible = false,
     List<TransactionSplit> splits = const [],
   }) async {
     final transactionId = DateTime.now().millisecondsSinceEpoch.toString();
@@ -50,36 +51,29 @@ class TransactionsNotifier extends StateNotifier<List<Transaction>> {
       exchangeRate: exchangeRate,
       timestamp: timestamp,
       description: description,
+      isTaxDeductible: isTaxDeductible,
     );
 
-    // Map the generated transaction ID to child splits
     final mappedSplits = splits.map((s) => s.copyWith(transactionId: transactionId)).toList();
 
-    // Trigger SQLite database insert with balance reconciliation updates
     await DbHelper.insertTransactionWithReconciliation(
       transaction.toMap(),
       mappedSplits.map((s) => s.toMap()).toList(),
     );
 
-    // Refresh transaction logs
     await loadTransactions();
 
-    // Force accounts provider to reload updated balances
     await _ref.read(accountsProvider.notifier).loadAccounts();
   }
 
   Future<void> deleteTransaction(String id) async {
-    // Trigger SQLite database deletion with reverse balance reconciliation
     await DbHelper.deleteTransactionWithReconciliation(id);
     
-    // Refresh transaction logs
     await loadTransactions();
 
-    // Force accounts provider to reload updated balances
     await _ref.read(accountsProvider.notifier).loadAccounts();
   }
 
-  // Net Cash Flow Calculation over selected date range
   Future<double> getNetCashFlow(DateTime start, DateTime end) async {
     return await DbHelper.getNetCashFlow(
       start.toIso8601String(),
@@ -87,7 +81,6 @@ class TransactionsNotifier extends StateNotifier<List<Transaction>> {
     );
   }
 
-  // Category Breakdown Aggregation over selected date range
   Future<List<Map<String, dynamic>>> getCategoryBreakdown(DateTime start, DateTime end) async {
     return await DbHelper.getCategoryBreakdown(
       start.toIso8601String(),

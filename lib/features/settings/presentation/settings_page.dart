@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_provider.dart';
@@ -52,22 +53,42 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final themeMode = ref.watch(themeProvider);
     final isDark = themeMode == ThemeMode.dark;
     final baseCurrency = ref.watch(baseCurrencyProvider);
+    final isAutoLockEnabled = ref.watch(autoLockProvider);
+    final currentFont = ref.watch(fontFamilyProvider);
 
-    return Scaffold(
-      key: _scaffoldKey,
-      drawer: const MainDrawer(activeRoute: '/settings'),
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.menu_rounded),
-          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/dashboard');
+          }
+        }
+      },
+      child: Scaffold(
+        key: _scaffoldKey,
+        drawer: const MainDrawer(activeRoute: '/settings'),
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/dashboard');
+              }
+            },
+          ),
+          title: const Text('Settings'),
         ),
-        title: const Text('Settings'),
-      ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(24.0),
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
           children: [
-            // Profile Card Preview
+            // Minimal Google Style Profile Header
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -80,92 +101,150 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               child: Row(
                 children: [
                   CircleAvatar(
-                    radius: 30,
-                    backgroundColor: isDark ? const Color(0xFF1F2937) : const Color(0xFFE2E8F0),
+                    radius: 26,
+                    backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
                     child: Text(
-                      'AM',
+                      'SB',
                       style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? Colors.white : Colors.black87,
                       ),
                     ),
                   ),
                   const SizedBox(width: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Alex Morgan',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'alex.morgan@finex.app',
-                        style: TextStyle(fontSize: 13, color: Colors.grey[500]),
-                      ),
-                    ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Text(
+                              'Sandaruwan B.',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppTheme.emeraldGreen.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                'PRO',
+                                style: TextStyle(color: AppTheme.emeraldGreen, fontSize: 9, fontWeight: FontWeight.w900),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'sandaruwan@finex.vault',
+                          style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 28),
 
-            // Settings Groups
-            _buildSectionTitle('PREFERENCES'),
-            const SizedBox(height: 8),
-            _buildSettingCard([
+            // Typography & Visuals
+            _buildSectionTitle('APPEARANCE & TYPOGRAPHY'),
+            const SizedBox(height: 10),
+            _buildSettingCard(isDark, [
               SwitchListTile(
                 value: isDark,
+                activeTrackColor: AppTheme.emeraldGreen,
                 onChanged: (val) {
                   ref.read(themeProvider.notifier).toggleTheme();
                 },
-                secondary: const Icon(Icons.dark_mode_rounded),
-                title: const Text('Dark Mode Theme'),
-                subtitle: const Text('Switch interface appearance'),
+                secondary: _buildSettingIcon(Icons.dark_mode_rounded, AppTheme.neonBlue, isDark),
+                title: const Text('Dark Mode Appearance', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                subtitle: const Text('Minimalist slate dark appearance', style: TextStyle(fontSize: 12)),
               ),
-              const Divider(indent: 16, endIndent: 16),
+              Divider(height: 1, color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
               ListTile(
-                leading: const Icon(Icons.monetization_on_rounded),
-                title: const Text('Base Currency'),
-                subtitle: Text('Current currency: $baseCurrency'),
-                trailing: const Icon(Icons.chevron_right_rounded),
+                leading: _buildSettingIcon(Icons.text_fields_rounded, AppTheme.purpleAccent, isDark),
+                title: const Text('App Font Style', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                subtitle: Text('Current: $currentFont', style: const TextStyle(fontSize: 12)),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        currentFont,
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: isDark ? AppTheme.emeraldGreen : AppTheme.lightPrimary),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.chevron_right_rounded, size: 20, color: Colors.grey),
+                  ],
+                ),
+                onTap: () => _showFontPickerDialog(context),
+              ),
+              Divider(height: 1, color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
+              ListTile(
+                leading: _buildSettingIcon(Icons.monetization_on_rounded, AppTheme.goldAccent, isDark),
+                title: const Text('Base Currency', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                subtitle: Text('Current: $baseCurrency (${worldCurrencies[baseCurrency] ?? ''})', style: const TextStyle(fontSize: 12)),
+                trailing: const Icon(Icons.chevron_right_rounded, size: 20, color: Colors.grey),
                 onTap: () => _showCurrencyPickerDialog(context),
               ),
             ]),
             const SizedBox(height: 24),
 
-            _buildSectionTitle('SECURITY'),
-            const SizedBox(height: 8),
-            _buildSettingCard([
+            // Security Settings
+            _buildSectionTitle('SECURITY & PRIVACY'),
+            const SizedBox(height: 10),
+            _buildSettingCard(isDark, [
               SwitchListTile(
                 value: authState.isBiometricsEnabled,
+                activeTrackColor: AppTheme.emeraldGreen,
                 onChanged: _toggleBiometrics,
-                secondary: const Icon(Icons.fingerprint_rounded),
-                title: const Text('Biometric Authentication'),
-                subtitle: const Text('Unlock app using Fingerprint / Face ID'),
+                secondary: _buildSettingIcon(Icons.fingerprint_rounded, AppTheme.emeraldGreen, isDark),
+                title: const Text('Biometric Unlock', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                subtitle: const Text('Touch ID / Face ID hardware authentication', style: TextStyle(fontSize: 12)),
               ),
-              const Divider(indent: 16, endIndent: 16),
+              Divider(height: 1, color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
+              SwitchListTile(
+                value: isAutoLockEnabled,
+                activeTrackColor: AppTheme.emeraldGreen,
+                onChanged: (val) {
+                  ref.read(autoLockProvider.notifier).toggleAutoLock();
+                },
+                secondary: _buildSettingIcon(Icons.timer_rounded, AppTheme.electricIndigo, isDark),
+                title: const Text('Auto-Lock on Background', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                subtitle: const Text('Protect wallet immediately when minimized', style: TextStyle(fontSize: 12)),
+              ),
+              Divider(height: 1, color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
               ListTile(
-                leading: const Icon(Icons.password_rounded),
-                title: const Text('Change Lock PIN'),
-                subtitle: const Text('Update your local security code'),
-                trailing: const Icon(Icons.chevron_right_rounded),
+                leading: _buildSettingIcon(Icons.password_rounded, AppTheme.neonBlue, isDark),
+                title: const Text('Change Master PIN', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                subtitle: const Text('Update your local security code', style: TextStyle(fontSize: 12)),
+                trailing: const Icon(Icons.chevron_right_rounded, size: 20, color: Colors.grey),
                 onTap: () {
-                  // Direct to PIN update/setup screen
                   context.push('/pin-setup');
                 },
               ),
             ]),
             const SizedBox(height: 24),
 
-            _buildSectionTitle('BACKUP & RESTORE'),
-            const SizedBox(height: 8),
-            _buildSettingCard([
+            // Backup & Data
+            _buildSectionTitle('BACKUP & STORAGE'),
+            const SizedBox(height: 10),
+            _buildSettingCard(isDark, [
               ListTile(
-                leading: const Icon(Icons.upload_file_rounded),
-                title: const Text('Export Backup (.zip)'),
-                subtitle: const Text('Save your database zip archive'),
+                leading: _buildSettingIcon(Icons.upload_file_rounded, AppTheme.neonBlue, isDark),
+                title: const Text('Export Encrypted Backup (.zip)', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                subtitle: const Text('Save SQLite ledger database archive', style: TextStyle(fontSize: 12)),
+                trailing: const Icon(Icons.chevron_right_rounded, size: 20, color: Colors.grey),
                 onTap: () async {
                   final success = await BackupService.exportBackup(context);
                   if (success && context.mounted) {
@@ -175,11 +254,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   }
                 },
               ),
-              const Divider(indent: 16, endIndent: 16),
+              Divider(height: 1, color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
               ListTile(
-                leading: const Icon(Icons.file_download_rounded),
-                title: const Text('Import / Restore Backup'),
-                subtitle: const Text('Restore database from a zip backup file'),
+                leading: _buildSettingIcon(Icons.file_download_rounded, AppTheme.emeraldGreen, isDark),
+                title: const Text('Import / Restore Backup', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                subtitle: const Text('Restore database from an exported zip file', style: TextStyle(fontSize: 12)),
+                trailing: const Icon(Icons.chevron_right_rounded, size: 20, color: Colors.grey),
                 onTap: () async {
                   final success = await BackupService.importBackup(context, ref);
                   if (success && context.mounted) {
@@ -192,60 +272,194 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ]),
             const SizedBox(height: 24),
 
-            _buildSectionTitle('SYSTEM'),
-            const SizedBox(height: 8),
-            _buildSettingCard([
+            // System Actions
+            _buildSectionTitle('SYSTEM ACTIONS'),
+            const SizedBox(height: 10),
+            _buildSettingCard(isDark, [
               ListTile(
-                leading: const Icon(Icons.lock_reset_rounded, color: AppTheme.goldAccent),
-                title: const Text('Lock App Now'),
+                leading: _buildSettingIcon(Icons.lock_rounded, AppTheme.goldAccent, isDark),
+                title: const Text('Lock App Immediately', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                trailing: const Icon(Icons.chevron_right_rounded, size: 20, color: Colors.grey),
                 onTap: () {
                   ref.read(authProvider.notifier).logout();
                 },
               ),
-              const Divider(indent: 16, endIndent: 16),
+              Divider(height: 1, color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
               ListTile(
-                leading: const Icon(Icons.delete_forever_rounded, color: AppTheme.dangerRed),
+                leading: _buildSettingIcon(Icons.delete_forever_rounded, AppTheme.dangerRed, isDark),
                 title: const Text(
                   'Reset App Data',
-                  style: TextStyle(color: AppTheme.dangerRed, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: AppTheme.dangerRed, fontWeight: FontWeight.w800, fontSize: 14),
                 ),
-                subtitle: const Text('Erase all stored keys and configurations'),
+                subtitle: const Text('Wipe local database and reset to initial setup', style: TextStyle(fontSize: 12)),
+                trailing: const Icon(Icons.chevron_right_rounded, size: 20, color: Colors.grey),
                 onTap: () {
                   _showResetDialog(context);
                 },
               ),
             ]),
+            const SizedBox(height: 32),
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
       style: const TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.bold,
+        fontSize: 11,
+        fontWeight: FontWeight.w800,
         letterSpacing: 1.2,
         color: Colors.grey,
       ),
     );
   }
 
-  Widget _buildSettingCard(List<Widget> children) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Widget _buildSettingIcon(IconData icon, Color color, bool isDark) {
     return Container(
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF161C2A) : Colors.white,
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Icon(icon, color: color, size: 18),
+    );
+  }
+
+  Widget _buildSettingCard(bool isDark, List<Widget> children) {
+    return Material(
+      color: isDark ? const Color(0xFF161C2A) : Colors.white,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
+        side: BorderSide(
           color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
         ),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         children: children,
       ),
+    );
+  }
+
+  void _showFontPickerDialog(BuildContext context) {
+    final currentFont = ref.read(fontFamilyProvider);
+    final fonts = [
+      {
+        'id': 'Plus Jakarta Sans',
+        'title': 'Plus Jakarta Sans',
+        'subtitle': 'Modern Geometric / Google Sans Aesthetic',
+        'style': GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w800),
+      },
+      {
+        'id': 'Inter',
+        'title': 'Inter',
+        'subtitle': 'Swiss Precision & Ultra-Clean Minimalism',
+        'style': GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800),
+      },
+      {
+        'id': 'Outfit',
+        'title': 'Outfit',
+        'subtitle': 'Avant-Garde Geometric & High Fashion Tech',
+        'style': GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w800),
+      },
+      {
+        'id': 'Poppins',
+        'title': 'Poppins',
+        'subtitle': 'Rounded Contemporary & Friendly Readability',
+        'style': GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700),
+      },
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF161C2A) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border.all(
+              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+            ),
+          ),
+          padding: EdgeInsets.only(
+            top: 24,
+            left: 24,
+            right: 24,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          ),
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const Text(
+                  'Choose Typography Style',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Select your preferred typeface to customize the entire app interface.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                const SizedBox(height: 20),
+                ...fonts.map((f) {
+                  final fontId = f['id'] as String;
+                  final isSelected = fontId == currentFont;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Material(
+                      color: isSelected
+                          ? (isDark ? AppTheme.emeraldGreen.withValues(alpha: 0.15) : AppTheme.lightPrimary.withValues(alpha: 0.08))
+                          : (isDark ? const Color(0xFF111827) : const Color(0xFFF8FAFC)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(
+                          color: isSelected
+                              ? AppTheme.emeraldGreen
+                              : (isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
+                          width: isSelected ? 1.5 : 1.0,
+                        ),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: ListTile(
+                        title: Text(f['title'] as String, style: f['style'] as TextStyle),
+                        subtitle: Text(f['subtitle'] as String, style: const TextStyle(fontSize: 11)),
+                        trailing: isSelected
+                            ? const Icon(Icons.check_circle_rounded, color: AppTheme.emeraldGreen, size: 22)
+                            : const Icon(Icons.circle_outlined, color: Colors.grey, size: 22),
+                        onTap: () {
+                          ref.read(fontFamilyProvider.notifier).setFontFamily(fontId);
+                          Navigator.pop(ctx);
+                        },
+                      ),
+                    ),
+                  );
+                }),
+                const SizedBox(height: 12),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -253,21 +467,22 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Reset App Data?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Reset All App Data?'),
         content: const Text(
-          'This developer shortcut will erase the stored PIN, onboarding completion state, and biometrics flags. The app will return to the onboarding screen.',
+          'This will erase your stored PIN, active session, biometrics configuration, and reset the app to the onboarding state.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancel'),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
               ref.read(authProvider.notifier).resetAll();
             },
-            style: TextButton.styleFrom(foregroundColor: AppTheme.dangerRed),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.dangerRed, foregroundColor: Colors.white),
             child: const Text('Reset Everything'),
           ),
         ],
@@ -289,18 +504,19 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               .toList();
 
           return AlertDialog(
-            title: const Text('Select Base Currency'),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            title: const Text('Select Portfolio Currency', style: TextStyle(fontWeight: FontWeight.w900)),
             content: SizedBox(
               width: double.maxFinite,
               height: 400,
               child: Column(
                 children: [
                   TextField(
-                    decoration: const InputDecoration(
-                      hintText: 'Search currency...',
-                      prefixIcon: Icon(Icons.search_rounded),
+                    decoration: InputDecoration(
+                      hintText: 'Search currency code (USD, LKR, EUR...)',
+                      prefixIcon: const Icon(Icons.search_rounded),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
                     onChanged: (val) {
@@ -312,20 +528,37 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   const SizedBox(height: 16),
                   Expanded(
                     child: ListView.builder(
+                      physics: const BouncingScrollPhysics(),
                       itemCount: filteredCurrencies.length,
                       itemBuilder: (context, index) {
                         final curr = filteredCurrencies[index];
                         final symbol = worldCurrencies[curr] ?? '';
-                        return RadioListTile<String>(
-                          title: Text('$curr ($symbol)'),
-                          value: curr,
-                          groupValue: currentCurrency,
-                          onChanged: (val) {
-                            if (val != null) {
-                              ref.read(baseCurrencyProvider.notifier).setCurrency(val);
-                              Navigator.pop(ctx);
-                            }
-                          },
+                        final isSelected = curr == currentCurrency;
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Material(
+                            color: isSelected ? AppTheme.emeraldGreen.withValues(alpha: 0.15) : Colors.transparent,
+                            shape: isSelected
+                                ? RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    side: BorderSide(color: AppTheme.emeraldGreen.withValues(alpha: 0.4)),
+                                  )
+                                : RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            clipBehavior: Clip.antiAlias,
+                            child: ListTile(
+                              title: Text(
+                                '$curr ($symbol)',
+                                style: TextStyle(fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500),
+                              ),
+                              trailing: isSelected
+                                  ? const Icon(Icons.check_circle_rounded, color: AppTheme.emeraldGreen, size: 20)
+                                  : const Icon(Icons.circle_outlined, size: 20, color: Colors.grey),
+                              onTap: () {
+                                ref.read(baseCurrencyProvider.notifier).setCurrency(curr);
+                                Navigator.pop(ctx);
+                              },
+                            ),
+                          ),
                         );
                       },
                     ),
