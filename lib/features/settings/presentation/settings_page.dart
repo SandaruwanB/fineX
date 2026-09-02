@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../core/widgets/main_drawer.dart';
+import '../../../core/widgets/drawer_blur_wrapper.dart';
 import '../../auth/auth_provider.dart';
 import '../../../core/services/local_auth_service.dart';
 import '../../../core/services/backup_service.dart';
@@ -20,6 +21,7 @@ class SettingsPage extends ConsumerStatefulWidget {
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _isDrawerOpen = false;
 
   Future<void> _toggleBiometrics(bool enabled) async {
     final authNotifier = ref.read(authProvider.notifier);
@@ -70,6 +72,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       child: Scaffold(
         key: _scaffoldKey,
         drawer: const MainDrawer(activeRoute: '/settings'),
+        drawerScrimColor: (isDark ? Colors.black : const Color(0xFF0F172A)).withValues(alpha: 0.45),
+        onDrawerChanged: (isOpen) {
+          if (_isDrawerOpen != isOpen) {
+            setState(() => _isDrawerOpen = isOpen);
+          }
+        },
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
@@ -83,7 +91,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ),
           title: const Text('Settings'),
         ),
-      body: SafeArea(
+      body: DrawerBlurWrapper(
+        isDrawerOpen: _isDrawerOpen,
+        child: SafeArea(
         child: ListView(
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
@@ -302,6 +312,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ],
         ),
       ),
+    ),
     ));
   }
 

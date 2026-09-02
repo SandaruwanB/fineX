@@ -10,6 +10,7 @@ import '../../../core/constants/currencies.dart';
 import '../../../core/widgets/main_drawer.dart';
 import '../../../core/widgets/currency_display.dart';
 import '../../../core/widgets/fade_slide_transition.dart';
+import '../../../core/widgets/drawer_blur_wrapper.dart';
 import '../../accounts/accounts_provider.dart';
 import '../../categories/categories_provider.dart';
 import '../../transactions/transactions_provider.dart';
@@ -28,6 +29,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   Offset _fabPosition = const Offset(-1, -1);
   bool _isMenuOpen = false;
+  bool _isDrawerOpen = false;
   DateTime? _lastBackPressTime;
 
   void _openFastLog({String flow = 'OUTFLOW'}) {
@@ -258,8 +260,14 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       },
       child: Scaffold(
         key: _scaffoldKey,
-      drawer: const MainDrawer(activeRoute: '/dashboard'),
-      appBar: AppBar(
+        drawer: const MainDrawer(activeRoute: '/dashboard'),
+        drawerScrimColor: (isDark ? Colors.black : const Color(0xFF0F172A)).withValues(alpha: 0.45),
+        onDrawerChanged: (isOpen) {
+          if (_isDrawerOpen != isOpen) {
+            setState(() => _isDrawerOpen = isOpen);
+          }
+        },
+        appBar: AppBar(
         leading: Builder(
           builder: (context) => Padding(
             padding: const EdgeInsets.only(left: 16.0),
@@ -321,8 +329,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           ),
         ],
       ),
-      body: Stack(
-        children: [
+      body: DrawerBlurWrapper(
+        isDrawerOpen: _isDrawerOpen,
+        child: Stack(
+          children: [
           SafeArea(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
@@ -498,6 +508,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           ..._buildDraggableFabMenu(context, isDark, size),
         ],
       ),
+    ),
     ));
   }
 

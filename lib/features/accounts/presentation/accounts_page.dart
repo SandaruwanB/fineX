@@ -8,6 +8,7 @@ import '../../../core/services/preference_service.dart';
 import '../../../core/widgets/main_drawer.dart';
 import '../../../core/widgets/currency_display.dart';
 import '../../../core/widgets/fade_slide_transition.dart';
+import '../../../core/widgets/drawer_blur_wrapper.dart';
 import '../accounts_provider.dart';
 import '../../transactions/transactions_provider.dart';
 
@@ -20,6 +21,7 @@ class AccountsPage extends ConsumerStatefulWidget {
 
 class _AccountsPageState extends ConsumerState<AccountsPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _isDrawerOpen = false;
 
   void _showAddAccountBottomSheet() {
     final nameController = TextEditingController();
@@ -347,6 +349,12 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
       child: Scaffold(
         key: _scaffoldKey,
         drawer: const MainDrawer(activeRoute: '/accounts'),
+        drawerScrimColor: (isDark ? Colors.black : const Color(0xFF0F172A)).withValues(alpha: 0.45),
+        onDrawerChanged: (isOpen) {
+          if (_isDrawerOpen != isOpen) {
+            setState(() => _isDrawerOpen = isOpen);
+          }
+        },
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
@@ -368,7 +376,9 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
             const SizedBox(width: 8),
           ],
         ),
-      body: SafeArea(
+      body: DrawerBlurWrapper(
+        isDrawerOpen: _isDrawerOpen,
+        child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: Column(
@@ -457,6 +467,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
           ),
         ),
       ),
+    ),
     ));
   }
 

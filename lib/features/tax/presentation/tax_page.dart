@@ -9,6 +9,7 @@ import '../../../core/constants/currencies.dart';
 import '../../../core/services/preference_service.dart';
 import '../../../core/widgets/main_drawer.dart';
 import '../../../core/widgets/fade_slide_transition.dart';
+import '../../../core/widgets/drawer_blur_wrapper.dart';
 import '../../transactions/transactions_provider.dart';
 import '../../categories/categories_provider.dart';
 
@@ -21,6 +22,7 @@ class TaxPage extends ConsumerStatefulWidget {
 
 class _TaxPageState extends ConsumerState<TaxPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _isDrawerOpen = false;
 
   Future<void> _exportRamisReport(
     List<dynamic> deductibleTxs,
@@ -112,6 +114,12 @@ class _TaxPageState extends ConsumerState<TaxPage> {
       child: Scaffold(
         key: _scaffoldKey,
         drawer: const MainDrawer(activeRoute: '/tax'),
+        drawerScrimColor: (isDark ? Colors.black : const Color(0xFF0F172A)).withValues(alpha: 0.45),
+        onDrawerChanged: (isOpen) {
+          if (_isDrawerOpen != isOpen) {
+            setState(() => _isDrawerOpen = isOpen);
+          }
+        },
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
@@ -133,7 +141,9 @@ class _TaxPageState extends ConsumerState<TaxPage> {
             const SizedBox(width: 8),
           ],
         ),
-      body: SafeArea(
+      body: DrawerBlurWrapper(
+        isDrawerOpen: _isDrawerOpen,
+        child: SafeArea(
         child: ListView(
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
@@ -431,6 +441,7 @@ class _TaxPageState extends ConsumerState<TaxPage> {
           ],
         ),
       ),
+    ),
     ));
   }
 }

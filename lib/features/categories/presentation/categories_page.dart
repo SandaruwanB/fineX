@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/main_drawer.dart';
+import '../../../core/widgets/drawer_blur_wrapper.dart';
 import '../categories_provider.dart';
 import '../../../core/services/preference_service.dart';
 import '../../../core/constants/currencies.dart';
@@ -16,6 +17,7 @@ class CategoriesPage extends ConsumerStatefulWidget {
 
 class _CategoriesPageState extends ConsumerState<CategoriesPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _isDrawerOpen = false;
 
   void _showAddCategoryBottomSheet(String defaultType) {
     final nameController = TextEditingController();
@@ -286,6 +288,12 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
         child: Scaffold(
           key: _scaffoldKey,
           drawer: const MainDrawer(activeRoute: '/categories'),
+          drawerScrimColor: (Theme.of(context).brightness == Brightness.dark ? Colors.black : const Color(0xFF0F172A)).withValues(alpha: 0.45),
+          onDrawerChanged: (isOpen) {
+            if (_isDrawerOpen != isOpen) {
+              setState(() => _isDrawerOpen = isOpen);
+            }
+          },
           appBar: AppBar(
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
@@ -305,11 +313,14 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
               ],
             ),
           ),
-          body: TabBarView(
-            children: [
-              _buildCategoryTab('EXPENSE'),
-              _buildCategoryTab('INCOME'),
-            ],
+          body: DrawerBlurWrapper(
+            isDrawerOpen: _isDrawerOpen,
+            child: TabBarView(
+              children: [
+                _buildCategoryTab('EXPENSE'),
+                _buildCategoryTab('INCOME'),
+              ],
+            ),
           ),
         ),
       ),
