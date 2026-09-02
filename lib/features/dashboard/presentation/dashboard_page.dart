@@ -234,11 +234,22 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           _lastBackPressTime = now;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Press back again to exit fineX'),
+              content: Text(
+                'Press back again to exit fineX',
+                style: TextStyle(
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
               duration: const Duration(seconds: 2),
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFF0F172A),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                ),
+              ),
+              backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
             ),
           );
         } else {
