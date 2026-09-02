@@ -9,6 +9,7 @@ import '../../../core/services/preference_service.dart';
 import '../../../core/constants/currencies.dart';
 import '../../../core/widgets/main_drawer.dart';
 import '../../../core/widgets/currency_display.dart';
+import '../../../core/widgets/fade_slide_transition.dart';
 import '../../accounts/accounts_provider.dart';
 import '../../categories/categories_provider.dart';
 import '../../transactions/transactions_provider.dart';
@@ -320,128 +321,149 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Wealth Hub Hero: Net Worth with Integrated Sparkline Curve
-                    _buildWealthHeroUnit(isDark, totalNetWorth, liquidTotal, liabilityTotal),
+                    FadeSlideTransition(
+                      delay: Duration.zero,
+                      child: _buildWealthHeroUnit(isDark, totalNetWorth, liquidTotal, liabilityTotal),
+                    ),
                     const SizedBox(height: 20),
 
                     // Executive Summary Dual Cards (Liquidity + Cash Flow)
-                    _buildExecutiveMetricsRow(isDark, liquidTotal, liabilityTotal, totalInflow, totalOutflow, netCashFlow, savingsRate),
+                    FadeSlideTransition(
+                      delay: const Duration(milliseconds: 60),
+                      child: _buildExecutiveMetricsRow(isDark, liquidTotal, liabilityTotal, totalInflow, totalOutflow, netCashFlow, savingsRate),
+                    ),
                     const SizedBox(height: 28),
 
-                    // Accounts Section Header
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'PORTFOLIO ACCOUNTS',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.2,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        InkWell(
-                          onTap: () => context.go('/accounts'),
-                          child: const Text(
-                            'Manage Deck →',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppTheme.emeraldGreen,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    _buildAccountsCarousel(accounts, isDark),
-                    const SizedBox(height: 28),
-
-                    // Enterprise Feed Header
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'ENTERPRISE ACTIVITY FEED',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.2,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        InkWell(
-                          onTap: () => context.go('/analytics'),
-                          child: const Text(
-                            'Full Ledger',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-
-                    if (transactions.isEmpty)
-                      Container(
-                        padding: const EdgeInsets.all(32),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF101726) : Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
-                          ),
-                        ),
-                        child: Center(
-                          child: Column(
+                    // Accounts Section Header & Carousel
+                    FadeSlideTransition(
+                      delay: const Duration(milliseconds: 120),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Icon(Icons.receipt_long_rounded, size: 36, color: Colors.grey.withValues(alpha: 0.4)),
-                              const SizedBox(height: 8),
-                              const Text('No transactions recorded yet', style: TextStyle(fontWeight: FontWeight.w700)),
-                              const SizedBox(height: 4),
-                              const Text('Tap the + button below for rapid 3-second logging', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                              const Text(
+                                'PORTFOLIO ACCOUNTS',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1.2,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              InkWell(
+                                onTap: () => context.go('/accounts'),
+                                child: const Text(
+                                  'Manage Deck →',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppTheme.emeraldGreen,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
-                        ),
-                      )
-                    else
-                      ...transactions.take(8).map((tx) {
-                        final cat = categories.firstWhere(
-                          (c) => c.id == tx.categoryId,
-                          orElse: () => AppCategory(
-                            id: '',
-                            name: tx.flowDirection == 'TRANSFER' ? 'Transfer' : 'General',
-                            icon: tx.flowDirection == 'TRANSFER' ? Icons.swap_horiz_rounded : Icons.payments_rounded,
-                            spent: 0.0,
-                            budget: 0.0,
-                            color: AppTheme.emeraldGreen,
-                            categoryType: 'EXPENSE',
-                          ),
-                        );
+                          const SizedBox(height: 12),
+                          _buildAccountsCarousel(accounts, isDark),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 28),
 
-                        final acc = accounts.firstWhere(
-                          (a) => a.id == tx.accountId,
-                          orElse: () => Account(
-                            id: '',
-                            name: 'Primary Vault',
-                            balance: 0.0,
-                            type: 'checking',
-                            color: Colors.grey,
+                    // Enterprise Feed Header & List
+                    FadeSlideTransition(
+                      delay: const Duration(milliseconds: 180),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'ENTERPRISE ACTIVITY FEED',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1.2,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              InkWell(
+                                onTap: () => context.go('/analytics'),
+                                child: const Text(
+                                  'Full Ledger',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        );
+                          const SizedBox(height: 12),
+                          if (transactions.isEmpty)
+                            Container(
+                              padding: const EdgeInsets.all(32),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF101726) : Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                                ),
+                              ),
+                              child: Center(
+                                child: Column(
+                                  children: [
+                                    Icon(Icons.receipt_long_rounded, size: 36, color: Colors.grey.withValues(alpha: 0.4)),
+                                    const SizedBox(height: 8),
+                                    const Text('No transactions recorded yet', style: TextStyle(fontWeight: FontWeight.w700)),
+                                    const SizedBox(height: 4),
+                                    const Text('Tap the + button below for rapid 3-second logging', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                  ],
+                                ),
+                              ),
+                            )
+                          else
+                            ...transactions.take(8).map((tx) {
+                              final cat = categories.firstWhere(
+                                (c) => c.id == tx.categoryId,
+                                orElse: () => AppCategory(
+                                  id: '',
+                                  name: tx.flowDirection == 'TRANSFER' ? 'Transfer' : 'General',
+                                  icon: tx.flowDirection == 'TRANSFER' ? Icons.swap_horiz_rounded : Icons.payments_rounded,
+                                  spent: 0.0,
+                                  budget: 0.0,
+                                  color: AppTheme.emeraldGreen,
+                                  categoryType: 'EXPENSE',
+                                ),
+                              );
 
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 8.0),
-                          child: InkWell(
-                            onTap: () => _showTransactionDetail(tx, cat, acc, isDark),
-                            borderRadius: BorderRadius.circular(16),
-                            child: _buildTransactionActivityRow(context, tx, cat, acc, isDark),
-                          ),
-                        );
-                      }),
+                              final acc = accounts.firstWhere(
+                                (a) => a.id == tx.accountId,
+                                orElse: () => Account(
+                                  id: '',
+                                  name: 'Primary Vault',
+                                  balance: 0.0,
+                                  type: 'checking',
+                                  color: Colors.grey,
+                                ),
+                              );
+
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 8.0),
+                                child: InkWell(
+                                  onTap: () => _showTransactionDetail(tx, cat, acc, isDark),
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: _buildTransactionActivityRow(context, tx, cat, acc, isDark),
+                                ),
+                              );
+                            }),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 80),
                   ],
                 ),

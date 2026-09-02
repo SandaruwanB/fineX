@@ -8,6 +8,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/currencies.dart';
 import '../../../core/services/preference_service.dart';
 import '../../../core/widgets/main_drawer.dart';
+import '../../../core/widgets/fade_slide_transition.dart';
 import '../../transactions/transactions_provider.dart';
 import '../../categories/categories_provider.dart';
 
@@ -138,179 +139,193 @@ class _TaxPageState extends ConsumerState<TaxPage> {
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
           children: [
             // Hero Readiness Banner
-            Container(
-              padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
-                gradient: isDark ? AppTheme.titaniumCardDark : AppTheme.platinumGradient,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 16,
-                    offset: const Offset(0, 8),
+            FadeSlideTransition(
+              delay: Duration.zero,
+              child: Container(
+                padding: const EdgeInsets.all(22),
+                decoration: BoxDecoration(
+                  gradient: isDark ? AppTheme.titaniumCardDark : AppTheme.platinumGradient,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
                   ),
-                ],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.wealthGreen.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Text(
+                                    'ASSESSMENT YEAR 2024/25',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w900,
+                                      color: AppTheme.emeraldGreen,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'RAMIS Readiness Score',
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                            ),
+                          ],
+                        ),
+                        Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            SizedBox(
+                              width: 56,
+                              height: 56,
+                              child: CircularProgressIndicator(
+                                value: readinessScore / 100,
+                                strokeWidth: 5,
+                                backgroundColor: Colors.grey.withValues(alpha: 0.2),
+                                color: AppTheme.emeraldGreen,
+                              ),
+                            ),
+                            Text(
+                              '${readinessScore.toInt()}%',
+                              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    const Divider(height: 1),
+                    const SizedBox(height: 18),
+
+                    // 3-Metric Summary
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Gross Income', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                              const SizedBox(height: 4),
+                              Text(
+                                '$symbol${totalGrossIncome.toStringAsFixed(2)}',
+                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(width: 1, height: 32, color: Colors.grey.withValues(alpha: 0.2)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Deductibles', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                              const SizedBox(height: 4),
+                              Text(
+                                '-$symbol${totalDeductibles.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 14,
+                                  color: AppTheme.emeraldGreen,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(width: 1, height: 32, color: Colors.grey.withValues(alpha: 0.2)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Taxable Base', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                              const SizedBox(height: 4),
+                              Text(
+                                '$symbol${netTaxable.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 14,
+                                  color: isDark ? Colors.white : AppTheme.lightPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
+            ),
+            const SizedBox(height: 20),
+
+            // Primary RAMIS Action Button
+            FadeSlideTransition(
+              delay: const Duration(milliseconds: 60),
+              child: ElevatedButton.icon(
+                onPressed: () => _exportRamisReport(deductibleTxs, totalGrossIncome, totalDeductibles, baseCurrency),
+                icon: const Icon(Icons.picture_as_pdf_rounded, size: 20),
+                label: const Text('Download RAMIS-Ready Financials (PDF/CSV)'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.wealthGreen,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 54),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                ),
+              ),
+            ),
+            const SizedBox(height: 28),
+
+            // Itemized Deductions Header
+            FadeSlideTransition(
+              delay: const Duration(milliseconds: 120),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.wealthGreen.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Text(
-                                  'ASSESSMENT YEAR 2024/25',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w900,
-                                    color: AppTheme.emeraldGreen,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'RAMIS Readiness Score',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
-                          ),
-                        ],
+                      Text(
+                        'ITEMIZED DEDUCTIBLES (${deductibleTxs.length})',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.2,
+                          color: Colors.grey,
+                        ),
                       ),
-                      Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          SizedBox(
-                            width: 56,
-                            height: 56,
-                            child: CircularProgressIndicator(
-                              value: readinessScore / 100,
-                              strokeWidth: 5,
-                              backgroundColor: Colors.grey.withValues(alpha: 0.2),
-                              color: AppTheme.emeraldGreen,
-                            ),
-                          ),
-                          Text(
-                            '${readinessScore.toInt()}%',
-                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
-                          ),
-                        ],
+                      Text(
+                        'Auto-verified',
+                        style: TextStyle(fontSize: 11, color: AppTheme.emeraldGreen, fontWeight: FontWeight.w700),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 18),
-                  const Divider(height: 1),
-                  const SizedBox(height: 18),
-
-                  // 3-Metric Summary
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Gross Income', style: TextStyle(fontSize: 11, color: Colors.grey)),
-                            const SizedBox(height: 4),
-                            Text(
-                              '$symbol${totalGrossIncome.toStringAsFixed(2)}',
-                              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(width: 1, height: 32, color: Colors.grey.withValues(alpha: 0.2)),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Deductibles', style: TextStyle(fontSize: 11, color: Colors.grey)),
-                            const SizedBox(height: 4),
-                            Text(
-                              '-$symbol${totalDeductibles.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w900,
-                                fontSize: 14,
-                                color: AppTheme.emeraldGreen,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(width: 1, height: 32, color: Colors.grey.withValues(alpha: 0.2)),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Taxable Base', style: TextStyle(fontSize: 11, color: Colors.grey)),
-                            const SizedBox(height: 4),
-                            Text(
-                              '$symbol${netTaxable.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w900,
-                                fontSize: 14,
-                                color: isDark ? Colors.white : AppTheme.lightPrimary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                  const SizedBox(height: 12),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-
-            // Primary RAMIS Action Button
-            ElevatedButton.icon(
-              onPressed: () => _exportRamisReport(deductibleTxs, totalGrossIncome, totalDeductibles, baseCurrency),
-              icon: const Icon(Icons.picture_as_pdf_rounded, size: 20),
-              label: const Text('Download RAMIS-Ready Financials (PDF/CSV)'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.wealthGreen,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 54),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
-              ),
-            ),
-            const SizedBox(height: 28),
-
-            // Itemized Deductions Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'ITEMIZED DEDUCTIBLES (${deductibleTxs.length})',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.2,
-                    color: Colors.grey,
-                  ),
-                ),
-                Text(
-                  'Auto-verified',
-                  style: TextStyle(fontSize: 11, color: AppTheme.emeraldGreen, fontWeight: FontWeight.w700),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
 
             if (deductibleTxs.isEmpty)
               Container(

@@ -7,6 +7,7 @@ import '../../../core/constants/currencies.dart';
 import '../../../core/services/preference_service.dart';
 import '../../../core/widgets/main_drawer.dart';
 import '../../../core/widgets/currency_display.dart';
+import '../../../core/widgets/fade_slide_transition.dart';
 import '../accounts_provider.dart';
 import '../../transactions/transactions_provider.dart';
 
@@ -375,76 +376,82 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
             children: [
               const SizedBox(height: 16),
               // Top Balance & Action Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'CONSOLIDATED VALUATION',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1.2,
-                          color: Colors.grey,
+              FadeSlideTransition(
+                delay: Duration.zero,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'CONSOLIDATED VALUATION',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.2,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        CurrencyDisplay(
+                          amount: totalBalance,
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: _showAddAccountBottomSheet,
+                      icon: const Icon(Icons.add_rounded, size: 18),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.wealthGreen,
+                        foregroundColor: Colors.white,
+                        minimumSize: Size.zero,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      CurrencyDisplay(
-                        amount: totalBalance,
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ],
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: _showAddAccountBottomSheet,
-                    icon: const Icon(Icons.add_rounded, size: 18),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.wealthGreen,
-                      foregroundColor: Colors.white,
-                      minimumSize: Size.zero,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                      label: const Text(
+                        'Link Card',
+                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
                       ),
                     ),
-                    label: const Text(
-                      'Link Card',
-                      style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(height: 20),
 
               // Card Deck List
               Expanded(
-                child: accounts.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.credit_card_off_rounded, size: 44, color: Colors.grey.withValues(alpha: 0.4)),
-                            const SizedBox(height: 12),
-                            const Text('No Accounts Linked', style: TextStyle(fontWeight: FontWeight.w800)),
-                            const SizedBox(height: 4),
-                            const Text('Tap "Link Card" above to add your first account.', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                          ],
+                child: FadeSlideTransition(
+                  delay: const Duration(milliseconds: 70),
+                  child: accounts.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.credit_card_off_rounded, size: 44, color: Colors.grey.withValues(alpha: 0.4)),
+                              const SizedBox(height: 12),
+                              const Text('No Accounts Linked', style: TextStyle(fontWeight: FontWeight.w800)),
+                              const SizedBox(height: 4),
+                              const Text('Tap "Link Card" above to add your first account.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          physics: const BouncingScrollPhysics(),
+                          itemCount: accounts.length,
+                          itemBuilder: (context, index) {
+                            final account = accounts[index];
+                            return _buildPhysicalCard(context, account, isDark);
+                          },
                         ),
-                      )
-                    : ListView.builder(
-                        physics: const BouncingScrollPhysics(),
-                        itemCount: accounts.length,
-                        itemBuilder: (context, index) {
-                          final account = accounts[index];
-                          return _buildPhysicalCard(context, account, isDark);
-                        },
-                      ),
+                ),
               ),
             ],
           ),

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/currency_display.dart';
+import '../../../core/widgets/fade_slide_transition.dart';
 import '../../../core/widgets/main_drawer.dart';
 import '../../categories/categories_provider.dart';
 import '../../transactions/transactions_provider.dart';
@@ -90,32 +91,42 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildCashComparisonCard(isDark, totalInflow, totalOutflow),
+                FadeSlideTransition(
+                  delay: Duration.zero,
+                  child: _buildCashComparisonCard(isDark, totalInflow, totalOutflow),
+                ),
                 const SizedBox(height: 32),
 
-                _buildTabsSelector(isDark),
-                const SizedBox(height: 24),
-
-                if (activeTotal <= 0)
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 64.0),
-                      child: Text(
-                        'No transactions recorded for this period.',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ),
-                  )
-                else ...[
-                  Text(
-                    '${_selectedTab == 'EXPENSE' ? 'Expense' : 'Income'} Share Breakdown',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                FadeSlideTransition(
+                  delay: const Duration(milliseconds: 70),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildTabsSelector(isDark),
+                      const SizedBox(height: 24),
+                      if (activeTotal <= 0)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 64.0),
+                            child: Text(
+                              'No transactions recorded for this period.',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ),
+                        )
+                      else ...[
+                        Text(
+                          '${_selectedTab == 'EXPENSE' ? 'Expense' : 'Income'} Share Breakdown',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildDonutChart(categorySums, categories, activeTotal),
+                        const SizedBox(height: 32),
+                        _buildDonutLegend(categorySums, categories, activeTotal, isDark),
+                      ],
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  _buildDonutChart(categorySums, categories, activeTotal),
-                  const SizedBox(height: 32),
-                  _buildDonutLegend(categorySums, categories, activeTotal, isDark),
-                ],
+                ),
               ],
             ),
           ),
