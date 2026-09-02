@@ -464,28 +464,180 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   void _showResetDialog(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final pinController = TextEditingController();
+    String? errorMessage;
+    bool isProcessing = false;
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Reset All App Data?'),
-        content: const Text(
-          'This will erase your stored PIN, active session, biometrics configuration, and reset the app to the onboarding state.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ref.read(authProvider.notifier).resetAll();
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.dangerRed, foregroundColor: Colors.white),
-            child: const Text('Reset Everything'),
-          ),
-        ],
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.dangerRed.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.warning_amber_rounded, color: AppTheme.dangerRed, size: 24),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Reset All Data',
+                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+                  ),
+                ),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'This action cannot be undone. All transactions, accounts, categories, and settings will be permanently wiped.',
+                    style: TextStyle(fontSize: 13, height: 1.4),
+                  ),
+                  const SizedBox(height: 18),
+                  const Text(
+                    'ENTER YOUR PIN TO CONFIRM',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.1,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: pinController,
+                    keyboardType: TextInputType.number,
+                    obscureText: true,
+                    maxLength: 4,
+                    autofocus: true,
+                    style: const TextStyle(
+                      letterSpacing: 8,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                    ),
+                    textAlign: TextAlign.center,
+                    decoration: InputDecoration(
+                      counterText: '',
+                      hintText: '••••',
+                      hintStyle: const TextStyle(letterSpacing: 8),
+                      prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                          color: errorMessage != null
+                              ? AppTheme.dangerRed
+                              : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                          color: errorMessage != null ? AppTheme.dangerRed : AppTheme.emeraldGreen,
+                          width: 2,
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                    ),
+                    onChanged: (_) {
+                      if (errorMessage != null) {
+                        setDialogState(() {
+                          errorMessage = null;
+                        });
+                      }
+                    },
+                  ),
+                  if (errorMessage != null) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.error_outline_rounded, color: AppTheme.dangerRed, size: 16),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            errorMessage!,
+                            style: const TextStyle(
+                              color: AppTheme.dangerRed,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isProcessing ? null : () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: isProcessing
+                    ? null
+                    : () async {
+                        final enteredPin = pinController.text.trim();
+                        if (enteredPin.length != 4) {
+                          setDialogState(() {
+                            errorMessage = 'Please enter your 4-digit PIN.';
+                          });
+                          return;
+                        }
+                        setDialogState(() {
+                          isProcessing = true;
+                          errorMessage = null;
+                        });
+
+                        final isValid = await ref.read(authProvider.notifier).verifyPin(enteredPin);
+                        if (!isValid) {
+                          setDialogState(() {
+                            isProcessing = false;
+                            errorMessage = 'Incorrect PIN code. Authorization failed.';
+                          });
+                          return;
+                        }
+
+                        if (ctx.mounted) {
+                          Navigator.pop(ctx);
+                        }
+                        await ref.read(authProvider.notifier).resetAll();
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.dangerRed,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                ),
+                child: isProcessing
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Text(
+                        'Verify & Reset',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
