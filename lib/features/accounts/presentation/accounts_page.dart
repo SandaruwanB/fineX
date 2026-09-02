@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/currencies.dart';
 import '../../../core/services/preference_service.dart';
@@ -331,46 +332,41 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
       (sum, acc) => acc.type == 'credit' ? sum - acc.balance.abs() : sum + acc.balance,
     );
 
-    return Scaffold(
-      key: _scaffoldKey,
-      drawer: const MainDrawer(activeRoute: '/accounts'),
-      appBar: AppBar(
-        leading: Builder(
-          builder: (context) => Padding(
-            padding: const EdgeInsets.only(left: 16.0),
-            child: Center(
-              child: InkWell(
-                onTap: () => _scaffoldKey.currentState?.openDrawer(),
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF161C2A) : const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.menu_rounded,
-                    size: 20,
-                    color: isDark ? Colors.white : Colors.black87,
-                  ),
-                ),
-              ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/dashboard');
+          }
+        }
+      },
+      child: Scaffold(
+        key: _scaffoldKey,
+        drawer: const MainDrawer(activeRoute: '/accounts'),
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/dashboard');
+              }
+            },
+          ),
+          title: const Text('Accounts & Cards'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.swap_horiz_rounded),
+              tooltip: 'Account Transfer',
+              onPressed: () => _showTransferModal(context, accounts),
             ),
-          ),
+            const SizedBox(width: 8),
+          ],
         ),
-        title: const Text('Accounts & Cards'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.swap_horiz_rounded),
-            tooltip: 'Account Transfer',
-            onPressed: () => _showTransferModal(context, accounts),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -453,7 +449,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
           ),
         ),
       ),
-    );
+    ));
   }
 
   // --- Physical Bank Card UI ---

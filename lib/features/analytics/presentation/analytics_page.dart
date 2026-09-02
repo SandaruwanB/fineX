@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/currency_display.dart';
 import '../../../core/widgets/main_drawer.dart';
@@ -56,17 +57,32 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
 
     final double activeTotal = _selectedTab == 'EXPENSE' ? totalOutflow : totalInflow;
 
-    return Scaffold(
-      drawer: const MainDrawer(activeRoute: '/analytics'),
-      appBar: AppBar(
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu_rounded),
-            onPressed: () => Scaffold.of(context).openDrawer(),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/dashboard');
+          }
+        }
+      },
+      child: Scaffold(
+        drawer: const MainDrawer(activeRoute: '/analytics'),
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/dashboard');
+              }
+            },
           ),
+          title: const Text('Analytics'),
         ),
-        title: const Text('Analytics'),
-      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -105,7 +121,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
           ),
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildCashComparisonCard(bool isDark, double inflow, double outflow) {

@@ -627,39 +627,42 @@ class _FastLogModalState extends ConsumerState<FastLogModal> {
       backgroundColor: Colors.transparent,
       builder: (ctx) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        return Container(
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF101726) : Colors.white,
+        return Material(
+          color: isDark ? const Color(0xFF101726) : Colors.white,
+          shape: RoundedRectangleBorder(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            border: Border.all(color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
+            side: BorderSide(color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
           ),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Select Source Account', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
-              const SizedBox(height: 12),
-              ...accounts.map((acc) {
-                return ListTile(
-                  leading: Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(color: acc.color, shape: BoxShape.circle),
-                  ),
-                  title: Text(acc.name, style: const TextStyle(fontWeight: FontWeight.w700)),
-                  subtitle: Text(acc.type.toUpperCase(), style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                  trailing: Text(
-                    acc.balance.toStringAsFixed(2),
-                    style: const TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                  onTap: () {
-                    setState(() => _selectedAccountId = acc.id);
-                    Navigator.pop(ctx);
-                  },
-                );
-              }),
-            ],
+          clipBehavior: Clip.antiAlias,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Select Source Account', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                const SizedBox(height: 12),
+                ...accounts.map((acc) {
+                  return ListTile(
+                    leading: Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(color: acc.color, shape: BoxShape.circle),
+                    ),
+                    title: Text(acc.name, style: const TextStyle(fontWeight: FontWeight.w700)),
+                    subtitle: Text(acc.type.toUpperCase(), style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                    trailing: Text(
+                      acc.balance.toStringAsFixed(2),
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                    onTap: () {
+                      setState(() => _selectedAccountId = acc.id);
+                      Navigator.pop(ctx);
+                    },
+                  );
+                }),
+              ],
+            ),
           ),
         );
       },

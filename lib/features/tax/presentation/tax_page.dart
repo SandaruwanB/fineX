@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/theme/app_theme.dart';
@@ -96,46 +97,41 @@ class _TaxPageState extends ConsumerState<TaxPage> {
         ? 100.0
         : ((deductibleTxs.length / transactions.length) * 100).clamp(65.0, 96.0);
 
-    return Scaffold(
-      key: _scaffoldKey,
-      drawer: const MainDrawer(activeRoute: '/tax'),
-      appBar: AppBar(
-        leading: Builder(
-          builder: (context) => Padding(
-            padding: const EdgeInsets.only(left: 16.0),
-            child: Center(
-              child: InkWell(
-                onTap: () => _scaffoldKey.currentState?.openDrawer(),
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF161C2A) : const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.menu_rounded,
-                    size: 20,
-                    color: isDark ? Colors.white : Colors.black87,
-                  ),
-                ),
-              ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/dashboard');
+          }
+        }
+      },
+      child: Scaffold(
+        key: _scaffoldKey,
+        drawer: const MainDrawer(activeRoute: '/tax'),
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/dashboard');
+              }
+            },
+          ),
+          title: const Text('Tax Filing Hub'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.share_rounded),
+              tooltip: 'Export Statement',
+              onPressed: () => _exportRamisReport(deductibleTxs, totalGrossIncome, totalDeductibles, baseCurrency),
             ),
-          ),
+            const SizedBox(width: 8),
+          ],
         ),
-        title: const Text('Tax Filing Hub'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share_rounded),
-            tooltip: 'Export Statement',
-            onPressed: () => _exportRamisReport(deductibleTxs, totalGrossIncome, totalDeductibles, baseCurrency),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
       body: SafeArea(
         child: ListView(
           physics: const BouncingScrollPhysics(),
@@ -420,6 +416,6 @@ class _TaxPageState extends ConsumerState<TaxPage> {
           ],
         ),
       ),
-    );
+    ));
   }
 }

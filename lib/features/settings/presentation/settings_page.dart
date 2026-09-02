@@ -56,38 +56,33 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final isAutoLockEnabled = ref.watch(autoLockProvider);
     final currentFont = ref.watch(fontFamilyProvider);
 
-    return Scaffold(
-      key: _scaffoldKey,
-      drawer: const MainDrawer(activeRoute: '/settings'),
-      appBar: AppBar(
-        leading: Builder(
-          builder: (context) => Padding(
-            padding: const EdgeInsets.only(left: 16.0),
-            child: Center(
-              child: InkWell(
-                onTap: () => _scaffoldKey.currentState?.openDrawer(),
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF161C2A) : const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.menu_rounded,
-                    size: 20,
-                    color: isDark ? Colors.white : Colors.black87,
-                  ),
-                ),
-              ),
-            ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/dashboard');
+          }
+        }
+      },
+      child: Scaffold(
+        key: _scaffoldKey,
+        drawer: const MainDrawer(activeRoute: '/settings'),
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/dashboard');
+              }
+            },
           ),
+          title: const Text('Settings'),
         ),
-        title: const Text('Settings'),
-      ),
       body: SafeArea(
         child: ListView(
           physics: const BouncingScrollPhysics(),
@@ -307,7 +302,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildSectionTitle(String title) {
@@ -336,7 +331,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Widget _buildSettingCard(bool isDark, List<Widget> children) {
     return Material(
       color: isDark ? const Color(0xFF161C2A) : Colors.white,
-      borderRadius: BorderRadius.circular(20),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
@@ -381,6 +375,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -392,66 +387,76 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
             ),
           ),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
-              const Text(
-                'Choose Typography Style',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Select your preferred typeface to customize the entire app interface.',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-              const SizedBox(height: 20),
-              ...fonts.map((f) {
-                final fontId = f['id'] as String;
-                final isSelected = fontId == currentFont;
-
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? (isDark ? AppTheme.emeraldGreen.withValues(alpha: 0.15) : AppTheme.lightPrimary.withValues(alpha: 0.08))
-                        : (isDark ? const Color(0xFF111827) : const Color(0xFFF8FAFC)),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isSelected
-                          ? AppTheme.emeraldGreen
-                          : (isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
-                      width: isSelected ? 1.5 : 1.0,
+          padding: EdgeInsets.only(
+            top: 24,
+            left: 24,
+            right: 24,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          ),
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: ListTile(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    title: Text(f['title'] as String, style: f['style'] as TextStyle),
-                    subtitle: Text(f['subtitle'] as String, style: const TextStyle(fontSize: 11)),
-                    trailing: isSelected
-                        ? const Icon(Icons.check_circle_rounded, color: AppTheme.emeraldGreen, size: 22)
-                        : const Icon(Icons.circle_outlined, color: Colors.grey, size: 22),
-                    onTap: () {
-                      ref.read(fontFamilyProvider.notifier).setFontFamily(fontId);
-                      Navigator.pop(ctx);
-                    },
-                  ),
-                );
-              }),
-              const SizedBox(height: 12),
-            ],
+                ),
+                const SizedBox(height: 18),
+                const Text(
+                  'Choose Typography Style',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Select your preferred typeface to customize the entire app interface.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                const SizedBox(height: 20),
+                ...fonts.map((f) {
+                  final fontId = f['id'] as String;
+                  final isSelected = fontId == currentFont;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Material(
+                      color: isSelected
+                          ? (isDark ? AppTheme.emeraldGreen.withValues(alpha: 0.15) : AppTheme.lightPrimary.withValues(alpha: 0.08))
+                          : (isDark ? const Color(0xFF111827) : const Color(0xFFF8FAFC)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(
+                          color: isSelected
+                              ? AppTheme.emeraldGreen
+                              : (isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
+                          width: isSelected ? 1.5 : 1.0,
+                        ),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: ListTile(
+                        title: Text(f['title'] as String, style: f['style'] as TextStyle),
+                        subtitle: Text(f['subtitle'] as String, style: const TextStyle(fontSize: 11)),
+                        trailing: isSelected
+                            ? const Icon(Icons.check_circle_rounded, color: AppTheme.emeraldGreen, size: 22)
+                            : const Icon(Icons.circle_outlined, color: Colors.grey, size: 22),
+                        onTap: () {
+                          ref.read(fontFamilyProvider.notifier).setFontFamily(fontId);
+                          Navigator.pop(ctx);
+                        },
+                      ),
+                    ),
+                  );
+                }),
+                const SizedBox(height: 12),
+              ],
+            ),
           ),
         );
       },
@@ -529,26 +534,30 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         final curr = filteredCurrencies[index];
                         final symbol = worldCurrencies[curr] ?? '';
                         final isSelected = curr == currentCurrency;
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 6),
-                          decoration: BoxDecoration(
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Material(
                             color: isSelected ? AppTheme.emeraldGreen.withValues(alpha: 0.15) : Colors.transparent,
-                            borderRadius: BorderRadius.circular(12),
-                            border: isSelected ? Border.all(color: AppTheme.emeraldGreen.withValues(alpha: 0.4)) : null,
-                          ),
-                          child: ListTile(
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            title: Text(
-                              '$curr ($symbol)',
-                              style: TextStyle(fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500),
+                            shape: isSelected
+                                ? RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    side: BorderSide(color: AppTheme.emeraldGreen.withValues(alpha: 0.4)),
+                                  )
+                                : RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            clipBehavior: Clip.antiAlias,
+                            child: ListTile(
+                              title: Text(
+                                '$curr ($symbol)',
+                                style: TextStyle(fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500),
+                              ),
+                              trailing: isSelected
+                                  ? const Icon(Icons.check_circle_rounded, color: AppTheme.emeraldGreen, size: 20)
+                                  : const Icon(Icons.circle_outlined, size: 20, color: Colors.grey),
+                              onTap: () {
+                                ref.read(baseCurrencyProvider.notifier).setCurrency(curr);
+                                Navigator.pop(ctx);
+                              },
                             ),
-                            trailing: isSelected
-                                ? const Icon(Icons.check_circle_rounded, color: AppTheme.emeraldGreen, size: 20)
-                                : const Icon(Icons.circle_outlined, size: 20, color: Colors.grey),
-                            onTap: () {
-                              ref.read(baseCurrencyProvider.notifier).setCurrency(curr);
-                              Navigator.pop(ctx);
-                            },
                           ),
                         );
                       },

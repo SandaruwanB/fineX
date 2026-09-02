@@ -27,6 +27,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   Offset _fabPosition = const Offset(-1, -1);
   bool _isMenuOpen = false;
+  DateTime? _lastBackPressTime;
 
   void _openFastLog({String flow = 'OUTFLOW'}) {
     HapticFeedback.lightImpact();
@@ -220,8 +221,32 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       );
     }
 
-    return Scaffold(
-      key: _scaffoldKey,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (_isMenuOpen) {
+          setState(() => _isMenuOpen = false);
+          return;
+        }
+        final now = DateTime.now();
+        if (_lastBackPressTime == null || now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
+          _lastBackPressTime = now;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Press back again to exit fineX'),
+              duration: const Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFF0F172A),
+            ),
+          );
+        } else {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        key: _scaffoldKey,
       drawer: const MainDrawer(activeRoute: '/dashboard'),
       appBar: AppBar(
         leading: Builder(
@@ -468,7 +493,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           ..._buildDraggableFabMenu(context, isDark, size),
         ],
       ),
-    );
+    ));
   }
 
   // --- Hero Unit with Integrated Sparkline ---
