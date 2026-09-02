@@ -93,7 +93,7 @@ class _SplitTransactionListState extends State<SplitTransactionList> {
                                         Expanded(
                                             flex: 3,
                                             child: DropdownButtonFormField<String>(
-                                                value: widget.categories.any((c) => c.id == item.categoryId)
+                                                initialValue: widget.categories.any((c) => c.id == item.categoryId)
                                                     ? item.categoryId
                                                     : (widget.categories.isNotEmpty ? widget.categories.first.id : null),
                                                 decoration: const InputDecoration(

@@ -119,7 +119,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
                 ],
                     if (parentOptions.isNotEmpty) ...[
                       DropdownButtonFormField<String?>(
-                        value: selectedParentId,
+                        initialValue: selectedParentId,
                         decoration: const InputDecoration(
                           labelText: 'Parent Category (Optional)',
                           border: OutlineInputBorder(

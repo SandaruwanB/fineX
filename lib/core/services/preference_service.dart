@@ -12,6 +12,7 @@ class PreferenceService {
   static const String _keyPrivacyMode = 'privacy_mode';
   static const String _keyBaseCurrency = 'base_currency';
   static const String _keyAutoLock = 'auto_lock_background';
+  static const String _keyFontFamily = 'app_font_family';
 
   bool get isOnboardingCompleted =>
       _prefs.getBool(_keyOnboardingCompleted) ?? false;
@@ -28,7 +29,7 @@ class PreferenceService {
   }
 
   bool get isDarkMode =>
-      _prefs.getBool(_keyThemeMode) ?? true; // Default to dark mode for premium look
+      _prefs.getBool(_keyThemeMode) ?? true; // Default to dark mode
 
   Future<void> setDarkMode(bool isDark) async {
     await _prefs.setBool(_keyThemeMode, isDark);
@@ -53,6 +54,13 @@ class PreferenceService {
 
   Future<void> setAutoLockEnabled(bool enabled) async {
     await _prefs.setBool(_keyAutoLock, enabled);
+  }
+
+  String get fontFamily =>
+      _prefs.getString(_keyFontFamily) ?? 'Outfit';
+
+  Future<void> setFontFamily(String font) async {
+    await _prefs.setString(_keyFontFamily, font);
   }
 
   Future<void> clear() async {
@@ -117,4 +125,20 @@ class AutoLockNotifier extends StateNotifier<bool> {
 final autoLockProvider = StateNotifierProvider<AutoLockNotifier, bool>((ref) {
   final prefService = ref.watch(preferenceServiceProvider);
   return AutoLockNotifier(prefService);
+});
+
+class FontFamilyNotifier extends StateNotifier<String> {
+  final PreferenceService _prefService;
+
+  FontFamilyNotifier(this._prefService) : super(_prefService.fontFamily);
+
+  Future<void> setFontFamily(String font) async {
+    await _prefService.setFontFamily(font);
+    state = font;
+  }
+}
+
+final fontFamilyProvider = StateNotifierProvider<FontFamilyNotifier, String>((ref) {
+  final prefService = ref.watch(preferenceServiceProvider);
+  return FontFamilyNotifier(prefService);
 });

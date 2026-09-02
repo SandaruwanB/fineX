@@ -91,6 +91,13 @@ class MainDrawer extends ConsumerWidget {
                                 ),
                                 _buildDrawerItem(
                                     context: context,
+                                    icon: Icons.receipt_long_rounded,
+                                    title: 'Tax Filing Hub',
+                                    route: '/tax',
+                                    isActive: activeRoute == '/tax',
+                                ),
+                                _buildDrawerItem(
+                                    context: context,
                                     icon: Icons.settings_rounded,
                                     title: 'Settings',
                                     route: '/settings',

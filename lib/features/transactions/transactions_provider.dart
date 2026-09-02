@@ -35,6 +35,7 @@ class TransactionsNotifier extends StateNotifier<List<Transaction>> {
     required double exchangeRate,
     required DateTime timestamp,
     String? description,
+    bool isTaxDeductible = false,
     List<TransactionSplit> splits = const [],
   }) async {
     final transactionId = DateTime.now().millisecondsSinceEpoch.toString();
@@ -50,6 +51,7 @@ class TransactionsNotifier extends StateNotifier<List<Transaction>> {
       exchangeRate: exchangeRate,
       timestamp: timestamp,
       description: description,
+      isTaxDeductible: isTaxDeductible,
     );
 
     final mappedSplits = splits.map((s) => s.copyWith(transactionId: transactionId)).toList();

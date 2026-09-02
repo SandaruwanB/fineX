@@ -63,6 +63,7 @@ class AppCategory {
     return AppCategory(
       id: map['id'] as String,
       name: map['name'] as String,
+      // ignore: non_const_argument_for_const_parameter
       icon: IconData(map['icon'] as int, fontFamily: 'MaterialIcons'),
       budget: (map['budget'] as num).toDouble(),
       spent: (map['spent'] as num).toDouble(),

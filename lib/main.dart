@@ -31,15 +31,16 @@ class FineXApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeProvider);
+    final selectedFont = ref.watch(fontFamilyProvider);
 
     return MaterialApp.router(
       title: 'fineX',
       debugShowCheckedModeBanner: false,
 
-      // Theme settings
+      // Dynamic Theme & Typography settings
       themeMode: themeMode,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      theme: AppTheme.getLightTheme(selectedFont),
+      darkTheme: AppTheme.getDarkTheme(selectedFont),
 
       // Routing configurations
       routerConfig: router,

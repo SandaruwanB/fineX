@@ -271,7 +271,7 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
               const SizedBox(height: 20),
 
               DropdownButtonFormField<String>(
-                value: _selectedAccountId,
+                initialValue: _selectedAccountId,
                 decoration: const InputDecoration(
                   labelText: 'Source Account',
                   border: OutlineInputBorder(
@@ -294,7 +294,7 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
 
               if (_flowDirection == 'TRANSFER') ...[
                 DropdownButtonFormField<String>(
-                  value: _selectedTargetAccountId,
+                  initialValue: _selectedTargetAccountId,
                   decoration: const InputDecoration(
                     labelText: 'Destination Account',
                     border: OutlineInputBorder(
@@ -316,7 +316,7 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
               ] else ...[
                 if (!_isSplitEnabled) ...[
                   DropdownButtonFormField<String>(
-                    value: _selectedCategoryId,
+                    initialValue: _selectedCategoryId,
                     decoration: const InputDecoration(
                       labelText: 'Category',
                       border: OutlineInputBorder(

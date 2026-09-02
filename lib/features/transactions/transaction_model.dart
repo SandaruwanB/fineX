@@ -10,6 +10,7 @@ class Transaction {
   final double exchangeRate;
   final DateTime timestamp;
   final String? description;
+  final bool isTaxDeductible;
   final List<TransactionSplit> splits;
 
   Transaction({
@@ -24,6 +25,7 @@ class Transaction {
     required this.exchangeRate,
     required this.timestamp,
     this.description,
+    this.isTaxDeductible = false,
     this.splits = const [],
   });
 
@@ -39,6 +41,7 @@ class Transaction {
     double? exchangeRate,
     DateTime? timestamp,
     String? description,
+    bool? isTaxDeductible,
     List<TransactionSplit>? splits,
   }) {
     return Transaction(
@@ -53,6 +56,7 @@ class Transaction {
       exchangeRate: exchangeRate ?? this.exchangeRate,
       timestamp: timestamp ?? this.timestamp,
       description: description ?? this.description,
+      isTaxDeductible: isTaxDeductible ?? this.isTaxDeductible,
       splits: splits ?? this.splits,
     );
   }
@@ -70,6 +74,7 @@ class Transaction {
       'exchange_rate': exchangeRate,
       'timestamp': timestamp.toIso8601String(),
       'description': description,
+      'is_tax_deductible': isTaxDeductible ? 1 : 0,
     };
   }
 
@@ -77,15 +82,16 @@ class Transaction {
     return Transaction(
       id: map['id'] as String,
       flowDirection: map['flow_direction'] as String,
-      transactionType: map['transaction_type'] as String,
+      transactionType: map['transaction_type'] as String? ?? (map['flow_direction'] == 'INFLOW' ? 'INCOME' : 'EXPENSE'),
       amount: (map['amount'] as num).toDouble(),
       categoryId: map['category_id'] as String?,
       accountId: map['account_id'] as String,
       transferTargetAccountId: map['transfer_target_account_id'] as String?,
-      baseCurrencyAmount: (map['base_currency_amount'] as num).toDouble(),
-      exchangeRate: (map['exchange_rate'] as num).toDouble(),
+      baseCurrencyAmount: ((map['base_currency_amount'] ?? map['amount']) as num).toDouble(),
+      exchangeRate: ((map['exchange_rate'] ?? 1.0) as num).toDouble(),
       timestamp: DateTime.parse(map['timestamp'] as String),
       description: map['description'] as String?,
+      isTaxDeductible: map['is_tax_deductible'] == 1 || map['is_tax_deductible'] == true,
       splits: splits,
     );
   }
@@ -98,6 +104,7 @@ class TransactionSplit {
   final double amount;
   final String flowDirection; 
   final String? description;
+  final bool isTaxDeductible;
 
   TransactionSplit({
     required this.id,
@@ -106,6 +113,7 @@ class TransactionSplit {
     required this.amount,
     required this.flowDirection,
     this.description,
+    this.isTaxDeductible = false,
   });
 
   TransactionSplit copyWith({
@@ -115,6 +123,7 @@ class TransactionSplit {
     double? amount,
     String? flowDirection,
     String? description,
+    bool? isTaxDeductible,
   }) {
     return TransactionSplit(
       id: id ?? this.id,
@@ -123,6 +132,7 @@ class TransactionSplit {
       amount: amount ?? this.amount,
       flowDirection: flowDirection ?? this.flowDirection,
       description: description ?? this.description,
+      isTaxDeductible: isTaxDeductible ?? this.isTaxDeductible,
     );
   }
 
@@ -134,6 +144,7 @@ class TransactionSplit {
       'amount': amount,
       'flow_direction': flowDirection,
       'description': description,
+      'is_tax_deductible': isTaxDeductible ? 1 : 0,
     };
   }
 
@@ -145,6 +156,7 @@ class TransactionSplit {
       amount: (map['amount'] as num).toDouble(),
       flowDirection: map['flow_direction'] as String,
       description: map['description'] as String?,
+      isTaxDeductible: map['is_tax_deductible'] == 1 || map['is_tax_deductible'] == true,
     );
   }
 }

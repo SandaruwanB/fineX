@@ -13,6 +13,7 @@ import '../../features/accounts/presentation/accounts_page.dart';
 import '../../features/categories/presentation/categories_page.dart';
 import '../../features/settings/presentation/settings_page.dart';
 import '../../features/analytics/presentation/analytics_page.dart';
+import '../../features/tax/presentation/tax_page.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
     final authState = ref.watch(authProvider);
@@ -49,6 +50,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             GoRoute(
                 path: '/analytics',
                 builder: (context, state) => const AnalyticsPage(),
+            ),
+            GoRoute(
+                path: '/tax',
+                builder: (context, state) => const TaxPage(),
             ),
             GoRoute(
                 path: '/settings',
