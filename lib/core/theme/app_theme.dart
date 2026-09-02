@@ -132,7 +132,7 @@ class AppTheme {
           backgroundColor: lightPrimary,
           foregroundColor: Colors.white,
           elevation: 0,
-          minimumSize: const Size(double.infinity, 52),
+          minimumSize: const Size(88, 48),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -202,7 +202,7 @@ class AppTheme {
           backgroundColor: darkPrimary,
           foregroundColor: const Color(0xFF070A10),
           elevation: 0,
-          minimumSize: const Size(double.infinity, 52),
+          minimumSize: const Size(88, 48),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),

@@ -184,7 +184,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     final accounts = ref.watch(accountsProvider);
     final transactions = ref.watch(transactionsProvider);
     final categories = ref.watch(categoriesProvider);
-    final isPrivacyEnabled = ref.watch(privacyModeProvider);
     final baseCurrency = ref.watch(baseCurrencyProvider);
     final themeMode = ref.watch(themeProvider);
     final isDark = themeMode == ThemeMode.dark;
@@ -217,7 +216,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     if (_fabPosition == const Offset(-1, -1)) {
       _fabPosition = Offset(
         (size.width - 72).clamp(16.0, 1000.0),
-        (size.height - 180).clamp(100.0, 2000.0),
+        (size.height - 240).clamp(100.0, 2000.0),
       );
     }
 
@@ -285,40 +284,13 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 color: isDark ? Colors.white : AppTheme.lightPrimary,
               ),
             ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppTheme.wealthGreen.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Text(
-                'ENTERPRISE',
-                style: TextStyle(
-                  color: AppTheme.emeraldGreen,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ),
+            const SizedBox(width: 8)
           ],
         ),
         actions: [
-          IconButton(
-            icon: Icon(
-              isPrivacyEnabled ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-              color: isPrivacyEnabled ? AppTheme.emeraldGreen : null,
-              size: 20,
-            ),
-            tooltip: 'Toggle Privacy Mode',
-            onPressed: () {
-              ref.read(privacyModeProvider.notifier).togglePrivacyMode();
-            },
-          ),
           Container(
             margin: const EdgeInsets.only(right: 16, left: 4),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF161C2A) : const Color(0xFFF1F5F9),
               borderRadius: BorderRadius.circular(8),
@@ -329,7 +301,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             child: Text(
               baseCurrency,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: FontWeight.w800,
                 color: isDark ? AppTheme.emeraldGreen : AppTheme.lightPrimary,
               ),
@@ -973,7 +945,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     if (_fabPosition == const Offset(-1, -1)) {
       _fabPosition = Offset(
         (screenSize.width - 72).clamp(16.0, 1000.0),
-        (screenSize.height - 180).clamp(100.0, 2000.0),
+        (screenSize.height - 240).clamp(100.0, 2000.0),
       );
     }
 

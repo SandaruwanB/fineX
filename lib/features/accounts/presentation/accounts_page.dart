@@ -407,6 +407,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.wealthGreen,
                       foregroundColor: Colors.white,
+                      minimumSize: Size.zero,
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
