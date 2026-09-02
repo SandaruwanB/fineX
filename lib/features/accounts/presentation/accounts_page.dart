@@ -3,8 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/constants/currencies.dart';
-import '../../../core/services/preference_service.dart';
 import '../../../core/widgets/main_drawer.dart';
 import '../../../core/widgets/currency_display.dart';
 import '../../../core/widgets/fade_slide_transition.dart';
@@ -35,7 +33,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
       AppTheme.goldAccent,
       const Color(0xFF8B5CF6), // Royal Purple
       const Color(0xFFF43F5E), // Crimson
-      const Color(0xFF1E293B), // Obsidian
+      const Color(0xFF0EA5E9), // Sky Blue
     ];
 
     showModalBottomSheet(
@@ -75,15 +73,15 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                     ),
                     const SizedBox(height: 18),
                     const Text(
-                      'Issue Digital Account / Card',
+                      'Link Account / Card',
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
                     ),
                     const SizedBox(height: 20),
                     TextField(
                       controller: nameController,
                       decoration: const InputDecoration(
-                        labelText: 'Account / Card Name',
-                        hintText: 'e.g. Executive Checking',
+                        labelText: 'Account / Bank Name',
+                        hintText: 'e.g. Commercial Bank, Cash Wallet',
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -97,7 +95,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                     ),
                     const SizedBox(height: 20),
                     const Text(
-                      'Account Tier',
+                      'Account Classification',
                       style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: Colors.grey),
                     ),
                     const SizedBox(height: 8),
@@ -108,10 +106,10 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                       ),
                       items: const [
                         DropdownMenuItem(value: 'checking', child: Text('Checking / Current Account')),
-                        DropdownMenuItem(value: 'savings', child: Text('High-Yield Savings Vault')),
-                        DropdownMenuItem(value: 'credit', child: Text('Obsidian Credit Card')),
+                        DropdownMenuItem(value: 'savings', child: Text('Savings Account / Vault')),
+                        DropdownMenuItem(value: 'credit', child: Text('Credit Card (Liability)')),
                         DropdownMenuItem(value: 'cash', child: Text('Physical Cash Wallet')),
-                        DropdownMenuItem(value: 'loan', child: Text('Commercial / Term Loan')),
+                        DropdownMenuItem(value: 'loan', child: Text('Personal / Term Loan')),
                       ],
                       onChanged: (val) {
                         if (val != null) {
@@ -123,7 +121,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                     ),
                     const SizedBox(height: 20),
                     const Text(
-                      'Card Theme Hue',
+                      'Accent Hue',
                       style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: Colors.grey),
                     ),
                     const SizedBox(height: 12),
@@ -183,7 +181,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                               minimumSize: const Size(double.infinity, 50),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                             ),
-                            child: const Text('Issue Account'),
+                            child: const Text('Save Account'),
                           ),
                         ),
                       ],
@@ -315,7 +313,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                     minimumSize: const Size(double.infinity, 50),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: const Text('Execute Instant Transfer', style: TextStyle(fontWeight: FontWeight.w800)),
+                  child: const Text('Execute Transfer', style: TextStyle(fontWeight: FontWeight.w800)),
                 ),
               ],
             ),
@@ -325,15 +323,58 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
     );
   }
 
+  void _confirmDeleteAccount(BuildContext context, Account account) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Unlink Account', style: TextStyle(fontWeight: FontWeight.w900)),
+        content: Text(
+          'Are you sure you want to remove "${account.name}"? Past transactions associated with this account will remain in history.',
+          style: const TextStyle(fontSize: 13, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              ref.read(accountsProvider.notifier).deleteAccount(account.id);
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('${account.name} unlinked successfully.')),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.dangerRed,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Remove Account'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final accounts = ref.watch(accountsProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final totalBalance = accounts.fold<double>(
-      0.0,
-      (sum, acc) => acc.type == 'credit' ? sum - acc.balance.abs() : sum + acc.balance,
-    );
+    double liquidTotal = 0.0;
+    double liabilityTotal = 0.0;
+
+    for (var acc in accounts) {
+      if (acc.type == 'credit' || acc.type == 'loan') {
+        liabilityTotal += acc.balance.abs();
+      } else {
+        liquidTotal += acc.balance;
+      }
+    }
+
+    final totalBalance = liquidTotal - liabilityTotal;
 
     return PopScope(
       canPop: false,
@@ -370,322 +411,349 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
           actions: [
             IconButton(
               icon: const Icon(Icons.swap_horiz_rounded),
-              tooltip: 'Account Transfer',
+              tooltip: 'Transfer',
               onPressed: () => _showTransferModal(context, accounts),
             ),
             const SizedBox(width: 8),
           ],
         ),
-      body: DrawerBlurWrapper(
-        isDrawerOpen: _isDrawerOpen,
-        child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 16),
-              // Top Balance & Action Header
-              FadeSlideTransition(
-                delay: Duration.zero,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'CONSOLIDATED VALUATION',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.2,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        CurrencyDisplay(
-                          amount: totalBalance,
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ],
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: _showAddAccountBottomSheet,
-                      icon: const Icon(Icons.add_rounded, size: 18),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.wealthGreen,
-                        foregroundColor: Colors.white,
-                        minimumSize: Size.zero,
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      label: const Text(
-                        'Link Card',
-                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Card Deck List
-              Expanded(
-                child: FadeSlideTransition(
-                  delay: const Duration(milliseconds: 70),
-                  child: accounts.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.credit_card_off_rounded, size: 44, color: Colors.grey.withValues(alpha: 0.4)),
-                              const SizedBox(height: 12),
-                              const Text('No Accounts Linked', style: TextStyle(fontWeight: FontWeight.w800)),
-                              const SizedBox(height: 4),
-                              const Text('Tap "Link Card" above to add your first account.', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                            ],
-                          ),
-                        )
-                      : ListView.builder(
-                          physics: const BouncingScrollPhysics(),
-                          itemCount: accounts.length,
-                          itemBuilder: (context, index) {
-                            final account = accounts[index];
-                            return _buildPhysicalCard(context, account, isDark);
-                          },
-                        ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
-    ));
-  }
-
-  // --- Physical Bank Card UI ---
-  Widget _buildPhysicalCard(BuildContext context, Account account, bool isDark) {
-    final isCredit = account.type == 'credit';
-    final baseCurrency = ref.watch(baseCurrencyProvider);
-    final symbol = worldCurrencies[baseCurrency] ?? '\$';
-
-    // Tailored gradient textures based on account type
-    LinearGradient cardGradient;
-    if (account.type == 'checking') {
-      cardGradient = AppTheme.wealthEmeraldGradient;
-    } else if (account.type == 'savings') {
-      cardGradient = const LinearGradient(
-        colors: [Color(0xFF334155), Color(0xFF1E293B), Color(0xFF0F172A)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      );
-    } else if (account.type == 'credit') {
-      cardGradient = const LinearGradient(
-        colors: [Color(0xFF1E1E24), Color(0xFF121217), Color(0xFF08080A)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      );
-    } else {
-      cardGradient = LinearGradient(
-        colors: [account.color, account.color.withValues(alpha: 0.7)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      );
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 18),
-      width: double.infinity,
-      height: 190,
-      decoration: BoxDecoration(
-        gradient: cardGradient,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.15),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(22),
-        child: Stack(
-          children: [
-            // Holographic Metallic Sheen
-            Positioned(
-              right: -30,
-              top: -30,
-              child: Container(
-                width: 160,
-                height: 160,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      Colors.white.withValues(alpha: 0.12),
-                      Colors.white.withValues(alpha: 0.0),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            Padding(
-              padding: const EdgeInsets.all(20.0),
+        body: DrawerBlurWrapper(
+          isDrawerOpen: _isDrawerOpen,
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Top Row: Card Title & Contactless Wave + Delete Action
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            account.name.toUpperCase(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1.0,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Icon(Icons.contactless_rounded, size: 18, color: Colors.white.withValues(alpha: 0.7)),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              account.type.toUpperCase(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 0.8,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: () {
-                              ref.read(accountsProvider.notifier).deleteAccount(account.id);
-                            },
-                            child: Icon(
-                              Icons.delete_outline_rounded,
-                              color: Colors.white.withValues(alpha: 0.6),
-                              size: 18,
-                            ),
+                  const SizedBox(height: 8),
+
+                  // Compact Consolidated Valuation & Quick Action Header
+                  FadeSlideTransition(
+                    delay: Duration.zero,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF131D2E) : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.03),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
                           ),
                         ],
                       ),
-                    ],
-                  ),
-
-                  // Middle Row: Gold EMV Chip Graphic
-                  Row(
-                    children: [
-                      Container(
-                        width: 36,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFFFFD700), Color(0xFFD4AF37), Color(0xFFB8860B)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: const Color(0xFFFFF8DC), width: 0.8),
-                        ),
-                        child: Center(
-                          child: Container(
-                            width: 24,
-                            height: 18,
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.black26, width: 0.8),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Text(
-                        '•••• •••• •••• ${account.id.substring(account.id.length > 4 ? account.id.length - 4 : 0)}',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.8),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 2.0,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  // Bottom Row: Balance & Cardholder Name
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Column(
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            isCredit ? 'CURRENT OUTSTANDING' : 'AVAILABLE BALANCE',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.7),
-                              fontSize: 9,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.8,
-                            ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'NET VALUATION',
+                                    style: TextStyle(
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 1.0,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  CurrencyDisplay(
+                                    amount: totalBalance,
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: -0.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              ElevatedButton.icon(
+                                onPressed: _showAddAccountBottomSheet,
+                                icon: const Icon(Icons.add_rounded, size: 15),
+                                label: const Text('Add Account', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.wealthGreen,
+                                  foregroundColor: Colors.white,
+                                  minimumSize: Size.zero,
+                                  padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(9),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '$symbol${account.balance.abs().toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: -0.5,
-                            ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.wealthGreen.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text('Liquid: ', style: TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w600)),
+                                    CurrencyDisplay(
+                                      amount: liquidTotal,
+                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppTheme.emeraldGreen),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.dangerRed.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text('Debt: ', style: TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w600)),
+                                    CurrencyDisplay(
+                                      amount: liabilityTotal,
+                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppTheme.dangerRed),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
                       Text(
-                        'SANDARUWAN B.',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.85),
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1.0,
+                        'LINKED ACCOUNTS (${accounts.length})',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.1,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: () => _showTransferModal(context, accounts),
+                        icon: const Icon(Icons.swap_horiz_rounded, size: 16),
+                        label: const Text('Transfer Funds', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppTheme.emeraldGreen,
+                          minimumSize: Size.zero,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Compact Account List
+                  Expanded(
+                    child: FadeSlideTransition(
+                      delay: const Duration(milliseconds: 70),
+                      child: accounts.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.credit_card_off_rounded, size: 40, color: Colors.grey.withValues(alpha: 0.4)),
+                                  const SizedBox(height: 10),
+                                  const Text('No Accounts Linked', style: TextStyle(fontWeight: FontWeight.w800)),
+                                  const SizedBox(height: 4),
+                                  const Text('Tap "Add Account" above to link your first card or wallet.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                ],
+                              ),
+                            )
+                          : ListView.builder(
+                              physics: const BouncingScrollPhysics(),
+                              itemCount: accounts.length,
+                              itemBuilder: (context, index) {
+                                final account = accounts[index];
+                                return _buildCompactAccountTile(context, account, isDark);
+                              },
+                            ),
+                    ),
                   ),
                 ],
               ),
             ),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+
+  // --- Compact & High-Density Account Tile ---
+  Widget _buildCompactAccountTile(BuildContext context, Account account, bool isDark) {
+    final isCredit = account.type == 'credit' || account.type == 'loan';
+    final last4 = account.id.length > 4 ? account.id.substring(account.id.length - 4) : account.id;
+
+    IconData icon;
+    String typeLabel;
+
+    switch (account.type) {
+      case 'savings':
+        icon = Icons.savings_rounded;
+        typeLabel = 'Savings Vault';
+        break;
+      case 'credit':
+        icon = Icons.credit_card_rounded;
+        typeLabel = 'Credit Card';
+        break;
+      case 'cash':
+        icon = Icons.payments_rounded;
+        typeLabel = 'Physical Cash';
+        break;
+      case 'loan':
+        icon = Icons.receipt_long_rounded;
+        typeLabel = 'Loan Liability';
+        break;
+      case 'checking':
+      default:
+        icon = Icons.account_balance_rounded;
+        typeLabel = 'Checking Account';
+        break;
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF131D2E) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Icon Container with Account Color
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: account.color.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: account.color.withValues(alpha: 0.35),
+                width: 1,
+              ),
+            ),
+            child: Icon(icon, color: account.color, size: 22),
+          ),
+          const SizedBox(width: 14),
+
+          // Account Details (Name & Type)
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  account.name,
+                  style: TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 3),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: Text(
+                        typeLabel,
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? Colors.grey[400] : Colors.grey[700],
+                        ),
+                      ),
+                    ),
+                    if (last4.isNotEmpty) ...[
+                      const SizedBox(width: 6),
+                      Text(
+                        '•••• $last4',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[500],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Balance & Delete Action
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              CurrencyDisplay(
+                amount: isCredit ? -account.balance.abs() : account.balance,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  color: isCredit
+                      ? AppTheme.dangerRed
+                      : (isDark ? Colors.white : const Color(0xFF0F172A)),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                isCredit ? 'Outstanding' : 'Available',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: isCredit ? AppTheme.dangerRed.withValues(alpha: 0.8) : Colors.grey[500],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 6),
+
+          // Delete icon button
+          IconButton(
+            icon: const Icon(Icons.delete_outline_rounded, size: 18),
+            color: Colors.grey[400],
+            padding: const EdgeInsets.all(4),
+            constraints: const BoxConstraints(),
+            tooltip: 'Unlink Account',
+            onPressed: () => _confirmDeleteAccount(context, account),
+          ),
+        ],
       ),
     );
   }
