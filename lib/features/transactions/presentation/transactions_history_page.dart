@@ -911,30 +911,41 @@ class _TransactionsHistoryPageState extends ConsumerState<TransactionsHistoryPag
                 const SizedBox(height: 3),
                 Row(
                   children: [
-                    Text(
-                      acc.name,
-                      style: const TextStyle(fontSize: 10.5, color: Colors.grey, fontWeight: FontWeight.w600),
+                    Flexible(
+                      child: Text(
+                        acc.name,
+                        style: const TextStyle(fontSize: 10.5, color: Colors.grey, fontWeight: FontWeight.w600),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                     if (targetAcc != null) ...[
                       const Icon(Icons.arrow_forward_rounded, size: 10, color: Colors.grey),
-                      Text(targetAcc.name, style: const TextStyle(fontSize: 10.5, color: Colors.grey, fontWeight: FontWeight.w600)),
+                      Flexible(
+                        child: Text(
+                          targetAcc.name,
+                          style: const TextStyle(fontSize: 10.5, color: Colors.grey, fontWeight: FontWeight.w600),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ],
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 4),
                     Text(
                       '• ${DateFormat('HH:mm').format(tx.timestamp)}',
                       style: TextStyle(fontSize: 10.5, color: Colors.grey.shade500),
                     ),
                     if (tx.splits.isNotEmpty) ...[
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 4),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                         decoration: BoxDecoration(
                           color: AppTheme.purpleAccent.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           '${tx.splits.length} SPLITS',
-                          style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800, color: AppTheme.purpleAccent),
+                          style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w800, color: AppTheme.purpleAccent),
                         ),
                       ),
                     ],

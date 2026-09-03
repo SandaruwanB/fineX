@@ -578,7 +578,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ],
             ),
             content: SizedBox(
-              width: 320,
+              width: double.maxFinite,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,

@@ -932,9 +932,13 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 const SizedBox(height: 2),
                 Row(
                   children: [
-                    Text(
-                      acc.name,
-                      style: const TextStyle(fontSize: 10, color: Colors.grey),
+                    Flexible(
+                      child: Text(
+                        acc.name,
+                        style: const TextStyle(fontSize: 10, color: Colors.grey),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                     if (tx.isTaxDeductible) ...[
                       const SizedBox(width: 6),
