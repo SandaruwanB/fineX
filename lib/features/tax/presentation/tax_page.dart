@@ -5,9 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/constants/currencies.dart';
 import '../../../core/services/preference_service.dart';
 import '../../../core/widgets/main_drawer.dart';
+import '../../../core/widgets/currency_display.dart';
 import '../../../core/widgets/fade_slide_transition.dart';
 import '../../../core/widgets/drawer_blur_wrapper.dart';
 import '../../transactions/transactions_provider.dart';
@@ -76,7 +76,6 @@ class _TaxPageState extends ConsumerState<TaxPage> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final baseCurrency = ref.watch(baseCurrencyProvider);
-    final symbol = worldCurrencies[baseCurrency] ?? '\$';
     final transactions = ref.watch(transactionsProvider);
     final categories = ref.watch(categoriesProvider);
 
@@ -237,8 +236,8 @@ class _TaxPageState extends ConsumerState<TaxPage> {
                             children: [
                               const Text('Gross Income', style: TextStyle(fontSize: 11, color: Colors.grey)),
                               const SizedBox(height: 4),
-                              Text(
-                                '$symbol${totalGrossIncome.toStringAsFixed(2)}',
+                              CurrencyDisplay(
+                                amount: totalGrossIncome,
                                 style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
                               ),
                             ],
@@ -252,8 +251,8 @@ class _TaxPageState extends ConsumerState<TaxPage> {
                             children: [
                               const Text('Deductibles', style: TextStyle(fontSize: 11, color: Colors.grey)),
                               const SizedBox(height: 4),
-                              Text(
-                                '-$symbol${totalDeductibles.toStringAsFixed(2)}',
+                              CurrencyDisplay(
+                                amount: -totalDeductibles,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w900,
                                   fontSize: 14,
@@ -271,8 +270,8 @@ class _TaxPageState extends ConsumerState<TaxPage> {
                             children: [
                               const Text('Taxable Base', style: TextStyle(fontSize: 11, color: Colors.grey)),
                               const SizedBox(height: 4),
-                              Text(
-                                '$symbol${netTaxable.toStringAsFixed(2)}',
+                              CurrencyDisplay(
+                                amount: netTaxable,
                                 style: TextStyle(
                                   fontWeight: FontWeight.w900,
                                   fontSize: 14,
@@ -415,8 +414,8 @@ class _TaxPageState extends ConsumerState<TaxPage> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text(
-                            '$symbol${tx.amount.toStringAsFixed(2)}',
+                          CurrencyDisplay(
+                            amount: tx.amount,
                             style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
                           ),
                           const SizedBox(height: 2),
