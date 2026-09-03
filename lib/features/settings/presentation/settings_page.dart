@@ -279,6 +279,28 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   _showChangePinDialog(context);
                 },
               ),
+              Divider(height: 1, color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
+              ListTile(
+                leading: _buildSettingIcon(Icons.shield_rounded, AppTheme.emeraldGreen, isDark),
+                title: const Text('Data Security', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                subtitle: const Text('Hardware Encrypted at Rest', style: TextStyle(fontSize: 12)),
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppTheme.emeraldGreen.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppTheme.emeraldGreen.withValues(alpha: 0.4), width: 0.8),
+                  ),
+                  child: const Text(
+                    'ACTIVE',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: AppTheme.emeraldGreen,
+                    ),
+                  ),
+                ),
+              ),
             ]),
             const SizedBox(height: 24),
 

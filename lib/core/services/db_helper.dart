@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:path/path.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
+import 'security_key_service.dart';
 
 class DbHelper {
     static Database? _database;
@@ -14,17 +15,64 @@ class DbHelper {
     static Future<Database> _initDatabase() async {
         final dbPath = await getDatabasesPath();
         final path = join(dbPath, 'finex.db');
+        final encryptionKey = await SecurityKeyService.getDatabaseEncryptionKey();
 
-        return await openDatabase(
-            path,
-            version: 3,
-            onCreate: _onCreate,
-            onUpgrade: _onUpgrade,
-            onOpen: (db) async {
-                // SQLite fk constraints enhance
-                await db.execute('PRAGMA foreign_keys = ON');
-            },
-        );
+        try {
+            final db = await openDatabase(
+                path,
+                password: encryptionKey,
+                version: 3,
+                onCreate: _onCreate,
+                onUpgrade: _onUpgrade,
+                onOpen: (db) async {
+                    await db.execute('PRAGMA foreign_keys = ON');
+                },
+            );
+            // Verify access
+            await db.rawQuery('SELECT count(*) FROM sqlite_master');
+            return db;
+        } catch (e) {
+            // If encrypted open fails (e.g. existing plaintext database from before encryption),
+            // attempt transparent rekeying to encrypt existing database
+            try {
+                final plainDb = await openDatabase(
+                    path,
+                    version: 3,
+                    onCreate: _onCreate,
+                    onUpgrade: _onUpgrade,
+                );
+                await plainDb.rawQuery("PRAGMA rekey = '$encryptionKey'");
+                await plainDb.close();
+
+                final encDb = await openDatabase(
+                    path,
+                    password: encryptionKey,
+                    version: 3,
+                    onCreate: _onCreate,
+                    onUpgrade: _onUpgrade,
+                    onOpen: (db) async {
+                        await db.execute('PRAGMA foreign_keys = ON');
+                    },
+                );
+                return encDb;
+            } catch (_) {
+                // If migration fails due to corrupted/mismatched ciphertext, delete and recreate fresh
+                try {
+                    await deleteDatabase(path);
+                } catch (_) {}
+
+                return await openDatabase(
+                    path,
+                    password: encryptionKey,
+                    version: 3,
+                    onCreate: _onCreate,
+                    onUpgrade: _onUpgrade,
+                    onOpen: (db) async {
+                        await db.execute('PRAGMA foreign_keys = ON');
+                    },
+                );
+            }
+        }
     }
 
   static Future<void> _onCreate(Database db, int version) async {
