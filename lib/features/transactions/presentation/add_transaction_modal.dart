@@ -173,7 +173,8 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
 
     if (_flowDirection != 'TRANSFER' && filteredCategories.isNotEmpty) {
       if (_selectedCategoryId == null || !filteredCategories.any((c) => c.id == _selectedCategoryId)) {
-        _selectedCategoryId = filteredCategories.first.id;
+        final defaultCat = filteredCategories.firstWhere((c) => c.isDefault, orElse: () => filteredCategories.first);
+        _selectedCategoryId = defaultCat.id;
       }
     }
 

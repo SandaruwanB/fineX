@@ -12,6 +12,11 @@ class AppCategory {
   final Color color;
   final String categoryType; // 'EXPENSE' | 'INCOME' | 'TRANSFER'
   final String? parentId;
+  final bool? _isEssential; // True: Essential/Mandatory (Need), False: Discretionary/Optional (Want)
+  final bool? _isDefault; // True: Default category for quick/fast transactions
+
+  bool get isEssential => _isEssential ?? true;
+  bool get isDefault => _isDefault ?? false;
 
   AppCategory({
     required this.id,
@@ -22,7 +27,10 @@ class AppCategory {
     required this.color,
     required this.categoryType,
     this.parentId,
-  });
+    bool isEssential = true,
+    bool isDefault = false,
+  })  : _isEssential = isEssential,
+        _isDefault = isDefault;
 
   AppCategory copyWith({
     String? id,
@@ -33,6 +41,8 @@ class AppCategory {
     Color? color,
     String? categoryType,
     String? parentId,
+    bool? isEssential,
+    bool? isDefault,
   }) {
     return AppCategory(
       id: id ?? this.id,
@@ -43,6 +53,8 @@ class AppCategory {
       color: color ?? this.color,
       categoryType: categoryType ?? this.categoryType,
       parentId: parentId ?? this.parentId,
+      isEssential: isEssential ?? this.isEssential,
+      isDefault: isDefault ?? this.isDefault,
     );
   }
 
@@ -56,6 +68,8 @@ class AppCategory {
       'color': color.toARGB32(),
       'category_type': categoryType,
       'parent_id': parentId,
+      'is_essential': isEssential ? 1 : 0,
+      'is_default': isDefault ? 1 : 0,
     };
   }
 
@@ -70,6 +84,8 @@ class AppCategory {
       color: Color(map['color'] as int),
       categoryType: map['category_type'] as String? ?? 'EXPENSE',
       parentId: map['parent_id'] as String?,
+      isEssential: map['is_essential'] == null || map['is_essential'] == 1 || map['is_essential'] == true,
+      isDefault: map['is_default'] == 1 || map['is_default'] == true,
     );
   }
 }
@@ -82,12 +98,14 @@ class CategoriesNotifier extends StateNotifier<List<AppCategory>> {
   static final List<AppCategory> _initialCategories = [
     AppCategory(
       id: 'housing',
-      name: 'Housing',
+      name: 'Housing & Rent',
       icon: Icons.home_rounded,
       budget: 1500.0,
       spent: 0.0,
       color: AppTheme.dangerRed,
       categoryType: 'EXPENSE',
+      isEssential: true,
+      isDefault: false,
     ),
     AppCategory(
       id: 'food',
@@ -97,35 +115,55 @@ class CategoriesNotifier extends StateNotifier<List<AppCategory>> {
       spent: 0.0,
       color: AppTheme.goldAccent,
       categoryType: 'EXPENSE',
+      isEssential: true,
+      isDefault: true,
     ),
     AppCategory(
       id: 'transport',
-      name: 'Transport',
+      name: 'Transport & Fuel',
       icon: Icons.directions_car_rounded,
       budget: 400.0,
       spent: 0.0,
-      color: const Color(0xFF8B5CF6), 
+      color: const Color(0xFF8B5CF6),
       categoryType: 'EXPENSE',
+      isEssential: true,
+      isDefault: false,
     ),
     AppCategory(
       id: 'utilities',
-      name: 'Utilities',
+      name: 'Utilities & Bills',
       icon: Icons.bolt_rounded,
       budget: 300.0,
       spent: 0.0,
       color: AppTheme.neonBlue,
       categoryType: 'EXPENSE',
+      isEssential: true,
+      isDefault: false,
     ),
     AppCategory(
       id: 'entertainment',
-      name: 'Entertainment',
+      name: 'Entertainment & Leisure',
       icon: Icons.movie_filter_rounded,
       budget: 400.0,
       spent: 0.0,
-      color: const Color(0xFFEC4899), // Pink
+      color: const Color(0xFFEC4899),
       categoryType: 'EXPENSE',
+      isEssential: false,
+      isDefault: false,
+    ),
+    AppCategory(
+      id: 'shopping',
+      name: 'Shopping & Luxuries',
+      icon: Icons.shopping_bag_rounded,
+      budget: 350.0,
+      spent: 0.0,
+      color: const Color(0xFFF59E0B),
+      categoryType: 'EXPENSE',
+      isEssential: false,
+      isDefault: false,
     ),
 
+    // Income categories
     AppCategory(
       id: 'earned_income',
       name: 'Earned Income',
@@ -134,6 +172,8 @@ class CategoriesNotifier extends StateNotifier<List<AppCategory>> {
       spent: 0.0,
       color: AppTheme.emeraldGreen,
       categoryType: 'INCOME',
+      isEssential: true,
+      isDefault: false,
     ),
     AppCategory(
       id: 'salary',
@@ -144,25 +184,31 @@ class CategoriesNotifier extends StateNotifier<List<AppCategory>> {
       color: AppTheme.emeraldGreen,
       categoryType: 'INCOME',
       parentId: 'earned_income',
+      isEssential: true,
+      isDefault: true,
     ),
     AppCategory(
       id: 'investment',
-      name: 'Investment',
+      name: 'Investments & Returns',
       icon: Icons.trending_up_rounded,
       budget: 0.0,
       spent: 0.0,
       color: AppTheme.neonBlue,
       categoryType: 'INCOME',
+      isEssential: true,
+      isDefault: false,
     ),
     AppCategory(
       id: 'dividends',
-      name: 'Dividends',
+      name: 'Dividends & Yield',
       icon: Icons.account_balance_wallet_rounded,
       budget: 0.0,
       spent: 0.0,
       color: AppTheme.neonBlue,
       categoryType: 'INCOME',
       parentId: 'investment',
+      isEssential: true,
+      isDefault: false,
     ),
   ];
 
@@ -184,16 +230,31 @@ class CategoriesNotifier extends StateNotifier<List<AppCategory>> {
     }
   }
 
-  Future<void> addCategory(
-    String name,
-    IconData icon,
-    double budget,
-    Color color,
-    String categoryType, {
+  Future<void> addCategory({
+    required String name,
+    required IconData icon,
+    required double budget,
+    required Color color,
+    required String categoryType,
     String? parentId,
+    bool isEssential = true,
+    bool isDefault = false,
   }) async {
+    final newId = DateTime.now().millisecondsSinceEpoch.toString();
+
+    // If marked default, clear existing default for same category type
+    if (isDefault) {
+      await DbHelper.clearDefaultCategory(categoryType);
+      state = state.map((c) {
+        if (c.categoryType == categoryType && c.isDefault) {
+          return c.copyWith(isDefault: false);
+        }
+        return c;
+      }).toList();
+    }
+
     final newCategory = AppCategory(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: newId,
       name: name,
       icon: icon,
       budget: budget,
@@ -201,10 +262,69 @@ class CategoriesNotifier extends StateNotifier<List<AppCategory>> {
       color: color,
       categoryType: categoryType,
       parentId: parentId,
+      isEssential: isEssential,
+      isDefault: isDefault,
     );
-    
+
     await DbHelper.insertCategory(newCategory.toMap());
     state = [...state, newCategory];
+  }
+
+  Future<void> updateCategory({
+    required String id,
+    required String name,
+    required IconData icon,
+    required double budget,
+    required Color color,
+    required String categoryType,
+    String? parentId,
+    required bool isEssential,
+    required bool isDefault,
+  }) async {
+    final existingIndex = state.indexWhere((c) => c.id == id);
+    if (existingIndex == -1) return;
+
+    if (isDefault) {
+      await DbHelper.clearDefaultCategory(categoryType);
+    }
+
+    final updated = state[existingIndex].copyWith(
+      name: name,
+      icon: icon,
+      budget: budget,
+      color: color,
+      categoryType: categoryType,
+      parentId: parentId,
+      isEssential: isEssential,
+      isDefault: isDefault,
+    );
+
+    await DbHelper.updateCategory(id, updated.toMap());
+
+    state = state.map((c) {
+      if (c.id == id) {
+        return updated;
+      }
+      if (isDefault && c.categoryType == categoryType && c.isDefault) {
+        return c.copyWith(isDefault: false);
+      }
+      return c;
+    }).toList();
+  }
+
+  Future<void> setDefaultCategory(String id, String categoryType) async {
+    await DbHelper.clearDefaultCategory(categoryType);
+    await DbHelper.updateCategory(id, {'is_default': 1});
+
+    state = state.map((c) {
+      if (c.id == id) {
+        return c.copyWith(isDefault: true);
+      }
+      if (c.categoryType == categoryType && c.isDefault) {
+        return c.copyWith(isDefault: false);
+      }
+      return c;
+    }).toList();
   }
 
   Future<void> deleteCategory(String id) async {

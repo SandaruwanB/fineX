@@ -137,16 +137,15 @@ class _FastLogModalState extends ConsumerState<FastLogModal> {
     final accounts = ref.watch(accountsProvider);
     final categories = ref.watch(categoriesProvider);
 
-    // Filter categories by flow
     final filteredCategories = categories.where((c) => c.categoryType == _flowDirection).toList();
-    final topCategories = filteredCategories.take(6).toList();
+    final sortedCategories = List<AppCategory>.from(filteredCategories)
+      ..sort((a, b) => (b.isDefault ? 1 : 0).compareTo(a.isDefault ? 1 : 0));
+    final topCategories = sortedCategories.take(6).toList();
 
-    // Default category fallback if none selected
-    if (_selectedCategoryId == null && topCategories.isNotEmpty) {
-      _selectedCategoryId = topCategories.first.id;
+    if (_selectedCategoryId == null && sortedCategories.isNotEmpty) {
+      _selectedCategoryId = sortedCategories.first.id;
     }
 
-    // Default account fallback
     if (_selectedAccountId == null && accounts.isNotEmpty) {
       _selectedAccountId = accounts.first.id;
     }

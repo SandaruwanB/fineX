@@ -17,7 +17,7 @@ class DbHelper {
 
         return await openDatabase(
             path,
-            version: 2,
+            version: 3,
             onCreate: _onCreate,
             onUpgrade: _onUpgrade,
             onOpen: (db) async {
@@ -50,6 +50,8 @@ class DbHelper {
         color INTEGER NOT NULL,
         category_type TEXT NOT NULL,
         parent_id TEXT,
+        is_essential INTEGER NOT NULL DEFAULT 1,
+        is_default INTEGER NOT NULL DEFAULT 0,
         FOREIGN KEY (parent_id) REFERENCES categories (id) ON DELETE SET NULL
       )
     ''');
@@ -129,6 +131,11 @@ class DbHelper {
         )
       ''');
     }
+
+    if (oldVersion < 3) {
+      await db.execute("ALTER TABLE categories ADD COLUMN is_essential INTEGER NOT NULL DEFAULT 1");
+      await db.execute("ALTER TABLE categories ADD COLUMN is_default INTEGER NOT NULL DEFAULT 0");
+    }
   }
 
   // --- Accounts Queries ---
@@ -188,6 +195,26 @@ class DbHelper {
       'categories',
       category,
       conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  static Future<void> updateCategory(String id, Map<String, dynamic> data) async {
+    final db = await database;
+    await db.update(
+      'categories',
+      data,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  static Future<void> clearDefaultCategory(String categoryType) async {
+    final db = await database;
+    await db.update(
+      'categories',
+      {'is_default': 0},
+      where: 'category_type = ?',
+      whereArgs: [categoryType],
     );
   }
 
