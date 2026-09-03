@@ -196,6 +196,261 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
     );
   }
 
+  void _showEditAccountBottomSheet(Account account) {
+    final nameController = TextEditingController(text: account.name);
+    String selectedType = account.type;
+    Color selectedColor = account.color;
+
+    final colors = [
+      AppTheme.wealthGreen,
+      AppTheme.neonBlue,
+      AppTheme.goldAccent,
+      const Color(0xFF8B5CF6), // Royal Purple
+      const Color(0xFFF43F5E), // Crimson
+      const Color(0xFF0EA5E9), // Sky Blue
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            final isCredit = selectedType == 'credit';
+
+            return Container(
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF101726) : Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                border: Border.all(color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
+              ),
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                top: 24,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Edit Account / Card',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: account.color.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            account.type.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w800,
+                              color: account.color,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Account Name Field
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Account / Bank Name',
+                        hintText: 'e.g. Commercial Bank, Cash Wallet',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Read-only Balance Banner (Preserves Ledger Consistency)
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: (isCredit ? AppTheme.dangerRed : AppTheme.emeraldGreen).withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.lock_rounded,
+                              size: 16,
+                              color: isCredit ? AppTheme.dangerRed : AppTheme.emeraldGreen,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Flexible(
+                                      child: Text(
+                                        'Current Balance (Locked)',
+                                        style: TextStyle(fontSize: 10.5, color: Colors.grey, fontWeight: FontWeight.w700),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    CurrencyDisplay(
+                                      amount: isCredit ? -account.balance.abs() : account.balance,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 14,
+                                        color: isCredit ? AppTheme.dangerRed : null,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                const Text(
+                                  'Balance is updated automatically via ledger transactions.',
+                                  style: TextStyle(fontSize: 10, color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+
+                    const Text(
+                      'Account Classification',
+                      style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedType,
+                      decoration: const InputDecoration(
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'checking', child: Text('Checking / Current Account')),
+                        DropdownMenuItem(value: 'savings', child: Text('Savings Account / Vault')),
+                        DropdownMenuItem(value: 'credit', child: Text('Credit Card (Liability)')),
+                        DropdownMenuItem(value: 'cash', child: Text('Physical Cash Wallet')),
+                        DropdownMenuItem(value: 'loan', child: Text('Personal / Term Loan')),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) {
+                          setState(() {
+                            selectedType = val;
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Accent Hue',
+                      style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: colors.map((color) {
+                        final isSelected = selectedColor.toARGB32() == color.toARGB32();
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              selectedColor = color;
+                            });
+                          },
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isSelected ? (isDark ? Colors.white : Colors.black) : Colors.transparent,
+                                width: 2.5,
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 28),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text('Cancel'),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              final name = nameController.text.trim();
+                              if (name.isNotEmpty) {
+                                ref.read(accountsProvider.notifier).updateAccount(
+                                      id: account.id,
+                                      name: name,
+                                      type: selectedType,
+                                      color: selectedColor,
+                                    );
+                                Navigator.pop(ctx);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Account updated successfully.')),
+                                );
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.wealthGreen,
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(double.infinity, 50),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            ),
+                            child: const Text('Save Changes'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _showTransferModal(BuildContext context, List<Account> accounts) {
     if (accounts.length < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -634,7 +889,6 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF131D2E) : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -649,111 +903,155 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          // Icon Container with Account Color
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: account.color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: account.color.withValues(alpha: 0.35),
-                width: 1,
-              ),
-            ),
-            child: Icon(icon, color: account.color, size: 22),
-          ),
-          const SizedBox(width: 14),
-
-          // Account Details (Name & Type)
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => _showEditAccountBottomSheet(account),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
               children: [
-                Text(
-                  account.name,
-                  style: TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w800,
-                    color: isDark ? Colors.white : const Color(0xFF0F172A),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 3),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(5),
-                      ),
-                      child: Text(
-                        typeLabel,
-                        style: TextStyle(
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w700,
-                          color: isDark ? Colors.grey[400] : Colors.grey[700],
-                        ),
-                      ),
+                // Icon Container with Account Color
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: account.color.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: account.color.withValues(alpha: 0.35),
+                      width: 1,
                     ),
-                    if (last4.isNotEmpty) ...[
-                      const SizedBox(width: 6),
+                  ),
+                  child: Icon(icon, color: account.color, size: 22),
+                ),
+                const SizedBox(width: 14),
+
+                // Account Details (Name & Type)
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        '•••• $last4',
+                        account.name,
                         style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey[500],
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w800,
+                          color: isDark ? Colors.white : const Color(0xFF0F172A),
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 3),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                              child: Text(
+                                typeLabel,
+                                style: TextStyle(
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDark ? Colors.grey[400] : Colors.grey[700],
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                          if (last4.isNotEmpty) ...[
+                            const SizedBox(width: 6),
+                            Text(
+                              '•••• $last4',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[500],
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+
+                // Balance
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    CurrencyDisplay(
+                      amount: isCredit ? -account.balance.abs() : account.balance,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                        color: isCredit
+                            ? AppTheme.dangerRed
+                            : (isDark ? Colors.white : const Color(0xFF0F172A)),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isCredit ? 'Outstanding' : 'Available',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: isCredit ? AppTheme.dangerRed.withValues(alpha: 0.8) : Colors.grey[500],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 4),
+
+                // Options Menu
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert_rounded, size: 18, color: Colors.grey[400]),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  onSelected: (val) {
+                    if (val == 'edit') {
+                      _showEditAccountBottomSheet(account);
+                    } else if (val == 'delete') {
+                      _confirmDeleteAccount(context, account);
+                    }
+                  },
+                  itemBuilder: (ctx) => [
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit_outlined, size: 16),
+                          SizedBox(width: 8),
+                          Text('Edit Account', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline_rounded, size: 16, color: AppTheme.dangerRed),
+                          SizedBox(width: 8),
+                          Text('Unlink Account', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.dangerRed)),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ],
             ),
           ),
-
-          // Balance & Delete Action
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              CurrencyDisplay(
-                amount: isCredit ? -account.balance.abs() : account.balance,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
-                  color: isCredit
-                      ? AppTheme.dangerRed
-                      : (isDark ? Colors.white : const Color(0xFF0F172A)),
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                isCredit ? 'Outstanding' : 'Available',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: isCredit ? AppTheme.dangerRed.withValues(alpha: 0.8) : Colors.grey[500],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 6),
-
-          // Delete icon button
-          IconButton(
-            icon: const Icon(Icons.delete_outline_rounded, size: 18),
-            color: Colors.grey[400],
-            padding: const EdgeInsets.all(4),
-            constraints: const BoxConstraints(),
-            tooltip: 'Unlink Account',
-            onPressed: () => _confirmDeleteAccount(context, account),
-          ),
-        ],
+        ),
       ),
     );
   }

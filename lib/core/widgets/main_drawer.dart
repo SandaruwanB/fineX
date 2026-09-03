@@ -190,10 +190,10 @@ class MainDrawer extends ConsumerWidget {
                                 ),
                                 _buildDrawerItem(
                                     context: context,
-                                    icon: Icons.receipt_long_rounded,
-                                    title: 'Tax Filing Hub',
-                                    route: '/tax',
-                                    isActive: activeRoute == '/tax',
+                                    icon: Icons.history_rounded,
+                                    title: 'Transaction History',
+                                    route: '/transactions',
+                                    isActive: activeRoute == '/transactions' || activeRoute == '/tax',
                                 ),
 
                                 const SizedBox(height: 18),

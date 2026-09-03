@@ -408,7 +408,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                                 ),
                               ),
                               InkWell(
-                                onTap: () => context.go('/analytics'),
+                                onTap: () => context.go('/transactions'),
                                 child: const Text(
                                   'Full Ledger',
                                   style: TextStyle(
@@ -1005,12 +1005,12 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         onTap: () => _openFastLog(flow: 'INFLOW'),
       ),
       _FabItem(
-        icon: Icons.receipt_long_rounded,
-        label: 'Tax Filing Hub',
+        icon: Icons.history_rounded,
+        label: 'Transaction History',
         color: AppTheme.neonBlue,
         onTap: () {
           setState(() => _isMenuOpen = false);
-          context.go('/tax');
+          context.go('/transactions');
         },
       ),
       _FabItem(

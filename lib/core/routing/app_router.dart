@@ -14,7 +14,7 @@ import '../../features/accounts/presentation/accounts_page.dart';
 import '../../features/categories/presentation/categories_page.dart';
 import '../../features/settings/presentation/settings_page.dart';
 import '../../features/analytics/presentation/analytics_page.dart';
-import '../../features/tax/presentation/tax_page.dart';
+import '../../features/transactions/presentation/transactions_history_page.dart';
 
 class RouterNotifier extends ChangeNotifier {
   final Ref _ref;
@@ -102,8 +102,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const AnalyticsPage(),
       ),
       GoRoute(
+        path: '/transactions',
+        builder: (context, state) => const TransactionsHistoryPage(),
+      ),
+      GoRoute(
         path: '/tax',
-        builder: (context, state) => const TaxPage(),
+        builder: (context, state) => const TransactionsHistoryPage(),
       ),
       GoRoute(
         path: '/settings',

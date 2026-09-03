@@ -147,6 +147,16 @@ class DbHelper {
     );
   }
 
+  static Future<void> updateAccount(String id, Map<String, dynamic> data) async {
+    final db = await database;
+    await db.update(
+      'accounts',
+      data,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
   static Future<void> deleteAccount(String id) async {
     final db = await database;
     await db.delete(

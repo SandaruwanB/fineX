@@ -108,6 +108,33 @@ class AccountsNotifier extends StateNotifier<List<Account>> {
     state = [...state, newAccount];
   }
 
+  Future<void> updateAccount({
+    required String id,
+    required String name,
+    required String type,
+    required Color color,
+  }) async {
+    final existingIndex = state.indexWhere((acc) => acc.id == id);
+    if (existingIndex == -1) return;
+
+    final existing = state[existingIndex];
+    final updated = existing.copyWith(
+      name: name,
+      type: type,
+      color: color,
+    );
+
+    await DbHelper.updateAccount(id, {
+      'name': name,
+      'type': type,
+      'color': color.toARGB32(),
+    });
+
+    final updatedList = List<Account>.from(state);
+    updatedList[existingIndex] = updated;
+    state = updatedList;
+  }
+
   Future<void> deleteAccount(String id) async {
     await DbHelper.deleteAccount(id);
     state = state.where((acc) => acc.id != id).toList();
