@@ -3,10 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/main_drawer.dart';
+import '../../../core/widgets/currency_display.dart';
 import '../../../core/widgets/drawer_blur_wrapper.dart';
 import '../categories_provider.dart';
-import '../../../core/services/preference_service.dart';
-import '../../../core/constants/currencies.dart';
 
 class CategoriesPage extends ConsumerStatefulWidget {
   const CategoriesPage({super.key});
@@ -329,8 +328,6 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
 
   Widget _buildCategoryTab(String type) {
     final categories = ref.watch(categoriesProvider);
-    final baseCurrency = ref.watch(baseCurrencyProvider);
-    final symbol = worldCurrencies[baseCurrency] ?? '\$';
     final typeCategories = categories.where((cat) => cat.categoryType == type).toList();
 
     final rootCategories = typeCategories.where((cat) => cat.parentId == null).toList();
@@ -383,9 +380,15 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                           ),
                           trailing: type == 'EXPENSE'
-                              ? Text(
-                                  '$symbol${parent.budget.toStringAsFixed(0)} limit',
-                                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                              ? Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    CurrencyDisplay(
+                                      amount: parent.budget,
+                                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                    ),
+                                    const Text(' limit', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                  ],
                                 )
                               : null,
                           childrenPadding: const EdgeInsets.only(left: 16, bottom: 8),
@@ -404,9 +407,6 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
   }
 
   Widget _buildCategoryItemRow(AppCategory category, bool isDark, {bool isChild = false}) {
-    final baseCurrency = ref.watch(baseCurrencyProvider);
-    final symbol = worldCurrencies[baseCurrency] ?? '\$';
-
     return Container(
       margin: EdgeInsets.only(bottom: isChild ? 4 : 12),
       padding: const EdgeInsets.all(16),
@@ -431,9 +431,15 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
             ),
           ),
           if (category.categoryType == 'EXPENSE')
-            Text(
-              '$symbol${category.budget.toStringAsFixed(0)} limit',
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CurrencyDisplay(
+                  amount: category.budget,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                const Text(' limit', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              ],
             ),
           IconButton(
             icon: const Icon(Icons.delete_outline_rounded, color: AppTheme.dangerRed, size: 18),

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'number_format_service.dart';
 
 class PreferenceService {
   final SharedPreferences _prefs;
@@ -13,6 +14,9 @@ class PreferenceService {
   static const String _keyBaseCurrency = 'base_currency';
   static const String _keyAutoLock = 'auto_lock_background';
   static const String _keyFontFamily = 'app_font_family';
+  static const String _keyNumberSeparatorFormat = 'number_separator_format';
+  static const String _keyDecimalDigits = 'decimal_digits';
+  static const String _keyCurrencySpacing = 'currency_spacing';
 
   bool get isOnboardingCompleted =>
       _prefs.getBool(_keyOnboardingCompleted) ?? false;
@@ -61,6 +65,29 @@ class PreferenceService {
 
   Future<void> setFontFamily(String font) async {
     await _prefs.setString(_keyFontFamily, font);
+  }
+
+  NumberSeparatorFormat get numberSeparatorFormat =>
+      NumberSeparatorFormatExtension.fromId(
+        _prefs.getString(_keyNumberSeparatorFormat) ?? 'commaDot',
+      );
+
+  Future<void> setNumberSeparatorFormat(NumberSeparatorFormat format) async {
+    await _prefs.setString(_keyNumberSeparatorFormat, format.id);
+  }
+
+  int get decimalDigits =>
+      _prefs.getInt(_keyDecimalDigits) ?? 2;
+
+  Future<void> setDecimalDigits(int digits) async {
+    await _prefs.setInt(_keyDecimalDigits, digits);
+  }
+
+  bool get isCurrencySpacingEnabled =>
+      _prefs.getBool(_keyCurrencySpacing) ?? true;
+
+  Future<void> setCurrencySpacingEnabled(bool enabled) async {
+    await _prefs.setBool(_keyCurrencySpacing, enabled);
   }
 
   Future<void> clear() async {
@@ -141,4 +168,52 @@ class FontFamilyNotifier extends StateNotifier<String> {
 final fontFamilyProvider = StateNotifierProvider<FontFamilyNotifier, String>((ref) {
   final prefService = ref.watch(preferenceServiceProvider);
   return FontFamilyNotifier(prefService);
+});
+
+class NumberSeparatorFormatNotifier extends StateNotifier<NumberSeparatorFormat> {
+  final PreferenceService _prefService;
+
+  NumberSeparatorFormatNotifier(this._prefService) : super(_prefService.numberSeparatorFormat);
+
+  Future<void> setFormat(NumberSeparatorFormat format) async {
+    await _prefService.setNumberSeparatorFormat(format);
+    state = format;
+  }
+}
+
+final numberSeparatorFormatProvider = StateNotifierProvider<NumberSeparatorFormatNotifier, NumberSeparatorFormat>((ref) {
+  final prefService = ref.watch(preferenceServiceProvider);
+  return NumberSeparatorFormatNotifier(prefService);
+});
+
+class DecimalDigitsNotifier extends StateNotifier<int> {
+  final PreferenceService _prefService;
+
+  DecimalDigitsNotifier(this._prefService) : super(_prefService.decimalDigits);
+
+  Future<void> setDigits(int digits) async {
+    await _prefService.setDecimalDigits(digits);
+    state = digits;
+  }
+}
+
+final decimalDigitsProvider = StateNotifierProvider<DecimalDigitsNotifier, int>((ref) {
+  final prefService = ref.watch(preferenceServiceProvider);
+  return DecimalDigitsNotifier(prefService);
+});
+
+class CurrencySpacingNotifier extends StateNotifier<bool> {
+  final PreferenceService _prefService;
+
+  CurrencySpacingNotifier(this._prefService) : super(_prefService.isCurrencySpacingEnabled);
+
+  Future<void> toggleSpacing(bool enabled) async {
+    await _prefService.setCurrencySpacingEnabled(enabled);
+    state = enabled;
+  }
+}
+
+final currencySpacingProvider = StateNotifierProvider<CurrencySpacingNotifier, bool>((ref) {
+  final prefService = ref.watch(preferenceServiceProvider);
+  return CurrencySpacingNotifier(prefService);
 });

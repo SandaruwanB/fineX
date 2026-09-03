@@ -10,6 +10,7 @@ import '../../auth/auth_provider.dart';
 import '../../../core/services/local_auth_service.dart';
 import '../../../core/services/backup_service.dart';
 import '../../../core/services/preference_service.dart';
+import '../../../core/services/number_format_service.dart';
 import '../../../core/constants/currencies.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
@@ -57,6 +58,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final baseCurrency = ref.watch(baseCurrencyProvider);
     final isAutoLockEnabled = ref.watch(autoLockProvider);
     final currentFont = ref.watch(fontFamilyProvider);
+    final separatorFormat = ref.watch(numberSeparatorFormatProvider);
+    final decimalDigits = ref.watch(decimalDigitsProvider);
+    final isCurrencySpacingEnabled = ref.watch(currencySpacingProvider);
 
     return PopScope(
       canPop: false,
@@ -187,13 +191,57 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 ),
                 onTap: () => _showFontPickerDialog(context),
               ),
-              Divider(height: 1, color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
+            ]),
+            const SizedBox(height: 24),
+
+            // Currency & Number Formatting
+            _buildSectionTitle('CURRENCY & NUMBER FORMATTING'),
+            const SizedBox(height: 10),
+            _buildSettingCard(isDark, [
               ListTile(
                 leading: _buildSettingIcon(Icons.monetization_on_rounded, AppTheme.goldAccent, isDark),
                 title: const Text('Base Currency', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
                 subtitle: Text('Current: $baseCurrency (${worldCurrencies[baseCurrency] ?? ''})', style: const TextStyle(fontSize: 12)),
                 trailing: const Icon(Icons.chevron_right_rounded, size: 20, color: Colors.grey),
                 onTap: () => _showCurrencyPickerDialog(context),
+              ),
+              Divider(height: 1, color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
+              ListTile(
+                leading: _buildSettingIcon(Icons.format_list_numbered_rounded, AppTheme.neonBlue, isDark),
+                title: const Text('Number & Separator Format', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                subtitle: Text(
+                  separatorFormat.title,
+                  style: const TextStyle(fontSize: 12),
+                ),
+                trailing: const Icon(Icons.chevron_right_rounded, size: 20, color: Colors.grey),
+                onTap: () => _showNumberFormatPickerDialog(context),
+              ),
+              Divider(height: 1, color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
+              ListTile(
+                leading: _buildSettingIcon(Icons.pin_outlined, AppTheme.purpleAccent, isDark),
+                title: const Text('Decimal Places', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                subtitle: Text(
+                  '$decimalDigits Decimals (e.g. ${NumberFormatService.formatAmount(amount: 75000.0, separatorFormat: separatorFormat, decimalDigits: decimalDigits, withSpace: isCurrencySpacingEnabled, currencySymbol: worldCurrencies[baseCurrency])})',
+                  style: const TextStyle(fontSize: 12),
+                ),
+                trailing: const Icon(Icons.chevron_right_rounded, size: 20, color: Colors.grey),
+                onTap: () => _showDecimalDigitsDialog(context),
+              ),
+              Divider(height: 1, color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
+              SwitchListTile(
+                value: isCurrencySpacingEnabled,
+                activeTrackColor: AppTheme.emeraldGreen,
+                onChanged: (val) {
+                  ref.read(currencySpacingProvider.notifier).toggleSpacing(val);
+                },
+                secondary: _buildSettingIcon(Icons.space_bar_rounded, AppTheme.wealthGreen, isDark),
+                title: const Text('Currency Symbol Spacing', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                subtitle: Text(
+                  isCurrencySpacingEnabled
+                      ? 'Enabled (e.g. ${worldCurrencies[baseCurrency] ?? '\$'} 75,000)'
+                      : 'Compact (e.g. ${worldCurrencies[baseCurrency] ?? '\$'}75,000)',
+                  style: const TextStyle(fontSize: 12),
+                ),
               ),
             ]),
             const SizedBox(height: 24),
@@ -973,6 +1021,202 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  void _showNumberFormatPickerDialog(BuildContext context) {
+    final currentFormat = ref.read(numberSeparatorFormatProvider);
+    final baseCurrency = ref.read(baseCurrencyProvider);
+    final symbol = worldCurrencies[baseCurrency] ?? '\$';
+    final decimalDigits = ref.read(decimalDigitsProvider);
+    final withSpace = ref.read(currencySpacingProvider);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('Number & Separator Format', style: TextStyle(fontWeight: FontWeight.w900)),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: NumberSeparatorFormat.values.map((format) {
+                final isSelected = format == currentFormat;
+                final preview = NumberFormatService.formatAmount(
+                  amount: 1234567.89,
+                  separatorFormat: format,
+                  decimalDigits: decimalDigits,
+                  withSpace: withSpace,
+                  currencySymbol: symbol,
+                );
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: () {
+                      ref.read(numberSeparatorFormatProvider.notifier).setFormat(format);
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Format updated to ${format.title}')),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: isSelected ? AppTheme.emeraldGreen.withValues(alpha: 0.12) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isSelected ? AppTheme.emeraldGreen : Colors.grey.withValues(alpha: 0.2),
+                          width: isSelected ? 1.5 : 1.0,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  format.title,
+                                  style: TextStyle(
+                                    fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
+                                    fontSize: 14,
+                                    color: isSelected ? AppTheme.emeraldGreen : null,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Preview: $preview',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: isSelected ? AppTheme.emeraldGreen : Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (isSelected)
+                            const Icon(Icons.check_circle_rounded, color: AppTheme.emeraldGreen, size: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDecimalDigitsDialog(BuildContext context) {
+    final currentDigits = ref.read(decimalDigitsProvider);
+    final currentFormat = ref.read(numberSeparatorFormatProvider);
+    final baseCurrency = ref.read(baseCurrencyProvider);
+    final symbol = worldCurrencies[baseCurrency] ?? '\$';
+    final withSpace = ref.read(currencySpacingProvider);
+
+    final options = [
+      {'digits': 0, 'label': '0 Decimals (Whole Integer)'},
+      {'digits': 2, 'label': '2 Decimals (Standard .00)'},
+      {'digits': 3, 'label': '3 Decimals (High Precision .000)'},
+    ];
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('Decimal Places Precision', style: TextStyle(fontWeight: FontWeight.w900)),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: options.map((opt) {
+              final digits = opt['digits'] as int;
+              final label = opt['label'] as String;
+              final isSelected = digits == currentDigits;
+              final preview = NumberFormatService.formatAmount(
+                amount: 75432.50,
+                separatorFormat: currentFormat,
+                decimalDigits: digits,
+                withSpace: withSpace,
+                currencySymbol: symbol,
+              );
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: () {
+                    ref.read(decimalDigitsProvider.notifier).setDigits(digits);
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Decimal places set to $digits')),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppTheme.emeraldGreen.withValues(alpha: 0.12) : Colors.transparent,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isSelected ? AppTheme.emeraldGreen : Colors.grey.withValues(alpha: 0.2),
+                        width: isSelected ? 1.5 : 1.0,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                label,
+                                style: TextStyle(
+                                  fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
+                                  fontSize: 14,
+                                  color: isSelected ? AppTheme.emeraldGreen : null,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Sample: $preview',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: isSelected ? AppTheme.emeraldGreen : Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (isSelected)
+                          const Icon(Icons.check_circle_rounded, color: AppTheme.emeraldGreen, size: 20),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+        ],
       ),
     );
   }

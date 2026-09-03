@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../core/services/preference_service.dart';
-import '../../../core/constants/currencies.dart';
 import '../../../core/widgets/main_drawer.dart';
 import '../../../core/widgets/currency_display.dart';
 import '../../../core/widgets/fade_slide_transition.dart';
@@ -55,9 +54,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   }
 
   void _showTransactionDetail(Transaction tx, AppCategory cat, Account acc, bool isDark) {
-    final baseCurrency = ref.read(baseCurrencyProvider);
-    final symbol = worldCurrencies[baseCurrency] ?? '\$';
-
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -110,8 +106,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     ],
                   ),
                 ),
-                Text(
-                  '${tx.flowDirection == 'INFLOW' ? '+' : '-'}$symbol${tx.amount.toStringAsFixed(2)}',
+                CurrencyDisplay(
+                  amount: tx.flowDirection == 'INFLOW' ? tx.amount : -tx.amount,
                   style: TextStyle(
                     fontWeight: FontWeight.w900,
                     fontSize: 18,
@@ -963,8 +959,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                '${isInflow ? '+' : '-'}${tx.amount.toStringAsFixed(2)}',
+              CurrencyDisplay(
+                amount: isInflow ? tx.amount : -tx.amount,
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
                   fontSize: 14,
