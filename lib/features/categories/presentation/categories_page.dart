@@ -78,7 +78,6 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> with SingleTick
 
     IconData selectedIcon = existing?.icon ?? _availableIcons.first;
     Color selectedColor = existing?.color ?? _availableColors.first;
-    String? selectedParentId = existing?.parentId;
     bool isEssential = existing?.isEssential ?? true;
     bool isDefault = existing?.isDefault ?? false;
 
@@ -90,10 +89,6 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> with SingleTick
         return StatefulBuilder(
           builder: (context, setModalState) {
             final isDark = Theme.of(context).brightness == Brightness.dark;
-            final categories = ref.watch(categoriesProvider);
-            final parentOptions = categories
-                .where((c) => c.categoryType == type && c.parentId == null && (existing == null || c.id != existing.id))
-                .toList();
 
             return Container(
               decoration: BoxDecoration(
@@ -163,7 +158,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> with SingleTick
                       controller: nameController,
                       decoration: InputDecoration(
                         labelText: 'Category Name',
-                        hintText: type == 'INCOME' ? 'e.g. Salary, Freelance, Dividend' : 'e.g. Groceries, Fuel, Rent',
+                        hintText: type == 'INCOME' ? 'e.g. Salary, Freelance, Dividends' : 'e.g. Groceries, Fuel, Bills',
                         prefixIcon: Icon(selectedIcon, color: selectedColor, size: 20),
                       ),
                     ),
@@ -226,7 +221,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> with SingleTick
                                       ],
                                     ),
                                     const SizedBox(height: 2),
-                                    const Text('Bills, Food, Rent, Medical', style: TextStyle(fontSize: 9.5, color: Colors.grey)),
+                                    const Text('Bills, Food, Rent, Health', style: TextStyle(fontSize: 9.5, color: Colors.grey)),
                                   ],
                                 ),
                               ),
@@ -269,7 +264,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> with SingleTick
                                       ],
                                     ),
                                     const SizedBox(height: 2),
-                                    const Text('Dining Out, Gaming, Leisure', style: TextStyle(fontSize: 9.5, color: Colors.grey)),
+                                    const Text('Dining Out, Shopping, Leisure', style: TextStyle(fontSize: 9.5, color: Colors.grey)),
                                   ],
                                 ),
                               ),
@@ -316,34 +311,6 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> with SingleTick
                       ),
                     ),
                     const SizedBox(height: 18),
-
-                    // Parent Category Selector (Optional Subcategory)
-                    if (parentOptions.isNotEmpty) ...[
-                      const Text(
-                        'Parent Category (Optional Nesting)',
-                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5, color: Colors.grey),
-                      ),
-                      const SizedBox(height: 8),
-                      DropdownButtonFormField<String?>(
-                        initialValue: selectedParentId,
-                        decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12)),
-                        items: [
-                          const DropdownMenuItem<String?>(value: null, child: Text('None (Root Category)')),
-                          ...parentOptions.map((p) => DropdownMenuItem<String?>(
-                                value: p.id,
-                                child: Row(
-                                  children: [
-                                    Icon(p.icon, size: 16, color: p.color),
-                                    const SizedBox(width: 8),
-                                    Text(p.name),
-                                  ],
-                                ),
-                              )),
-                        ],
-                        onChanged: (val) => setModalState(() => selectedParentId = val),
-                      ),
-                      const SizedBox(height: 18),
-                    ],
 
                     // Icon Picker Grid
                     const Text(
@@ -435,7 +402,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> with SingleTick
                                         budget: budget,
                                         color: selectedColor,
                                         categoryType: type,
-                                        parentId: selectedParentId,
+                                        parentId: null,
                                         isEssential: isEssential,
                                         isDefault: isDefault,
                                       );
@@ -446,7 +413,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> with SingleTick
                                         budget: budget,
                                         color: selectedColor,
                                         categoryType: type,
-                                        parentId: selectedParentId,
+                                        parentId: null,
                                         isEssential: isEssential,
                                         isDefault: isDefault,
                                       );
@@ -484,7 +451,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> with SingleTick
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Delete Category', style: TextStyle(fontWeight: FontWeight.w900)),
-        content: Text('Are you sure you want to delete "${category.name}"? Sub-categories and transactions will remain intact.'),
+        content: Text('Are you sure you want to delete "${category.name}"? Transactions associated with this category will remain safe.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -582,7 +549,6 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> with SingleTick
 
   Widget _buildCategoryTab(String type, List<AppCategory> typeCategories, bool isDark) {
     final isExpense = type == 'EXPENSE';
-    final rootCategories = typeCategories.where((cat) => cat.parentId == null).toList();
 
     double totalBudget = 0.0;
     double essentialBudget = 0.0;
@@ -599,7 +565,9 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> with SingleTick
 
     final defaultCategory = typeCategories.firstWhere(
       (c) => c.isDefault,
-      orElse: () => typeCategories.isNotEmpty ? typeCategories.first : AppCategory(id: '', name: 'None', icon: Icons.help, spent: 0, budget: 0, color: Colors.grey, categoryType: type),
+      orElse: () => typeCategories.isNotEmpty
+          ? typeCategories.first
+          : AppCategory(id: '', name: 'None', icon: Icons.help, spent: 0, budget: 0, color: Colors.grey, categoryType: type),
     );
 
     return SafeArea(
@@ -771,7 +739,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> with SingleTick
 
             // Category List
             Expanded(
-              child: rootCategories.isEmpty
+              child: typeCategories.isEmpty
                   ? Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -786,12 +754,10 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> with SingleTick
                     )
                   : ListView.builder(
                       physics: const BouncingScrollPhysics(),
-                      itemCount: rootCategories.length,
+                      itemCount: typeCategories.length,
                       itemBuilder: (context, index) {
-                        final parent = rootCategories[index];
-                        final children = typeCategories.where((c) => c.parentId == parent.id).toList();
-
-                        return _buildCompactCategoryTile(parent, children, isDark, type);
+                        final category = typeCategories[index];
+                        return _buildCompactCategoryTile(category, isDark, type);
                       },
                     ),
             ),
@@ -803,7 +769,6 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> with SingleTick
 
   Widget _buildCompactCategoryTile(
     AppCategory category,
-    List<AppCategory> children,
     bool isDark,
     String type,
   ) {
@@ -833,217 +798,173 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> with SingleTick
           onTap: () => _showCategoryModal(existing: category, defaultType: type),
           child: Padding(
             padding: const EdgeInsets.all(13),
-            child: Column(
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    // Icon Container
-                    Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: category.color.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: category.color.withValues(alpha: 0.35), width: 1),
-                      ),
-                      child: Icon(category.icon, color: category.color, size: 20),
-                    ),
-                    const SizedBox(width: 12),
+                // Icon Container
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: category.color.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: category.color.withValues(alpha: 0.35), width: 1),
+                  ),
+                  child: Icon(category.icon, color: category.color, size: 20),
+                ),
+                const SizedBox(width: 12),
 
-                    // Category Details (Name & Badges)
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                // Category Details (Name & Badges)
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  category.name,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w800,
-                                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          Flexible(
+                            child: Text(
+                              category.name,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (category.isDefault) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                              decoration: BoxDecoration(
+                                color: AppTheme.goldAccent.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: AppTheme.goldAccent.withValues(alpha: 0.4), width: 0.8),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.star_rounded, size: 10, color: AppTheme.goldAccent),
+                                  SizedBox(width: 2),
+                                  Text(
+                                    'DEFAULT',
+                                    style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w900, color: AppTheme.goldAccent),
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          if (isExpense) ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: category.isEssential
+                                    ? AppTheme.emeraldGreen.withValues(alpha: 0.12)
+                                    : AppTheme.purpleAccent.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                category.isEssential ? 'MANDATORY (NEED)' : 'OPTIONAL (WANT)',
+                                style: TextStyle(
+                                  fontSize: 8.5,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.3,
+                                  color: category.isEssential ? AppTheme.emeraldGreen : AppTheme.purpleAccent,
                                 ),
                               ),
-                              if (category.isDefault) ...[
-                                const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.goldAccent.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(color: AppTheme.goldAccent.withValues(alpha: 0.4), width: 0.8),
-                                  ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.star_rounded, size: 10, color: AppTheme.goldAccent),
-                                      SizedBox(width: 2),
-                                      Text(
-                                        'DEFAULT',
-                                        style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w900, color: AppTheme.goldAccent),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                          const SizedBox(height: 3),
-                          Row(
-                            children: [
-                              if (isExpense) ...[
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                  decoration: BoxDecoration(
-                                    color: category.isEssential
-                                        ? AppTheme.emeraldGreen.withValues(alpha: 0.12)
-                                        : AppTheme.purpleAccent.withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    category.isEssential ? 'MANDATORY (NEED)' : 'OPTIONAL (WANT)',
-                                    style: TextStyle(
-                                      fontSize: 8.5,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.3,
-                                      color: category.isEssential ? AppTheme.emeraldGreen : AppTheme.purpleAccent,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                              if (children.isNotEmpty) ...[
-                                const SizedBox(width: 6),
-                                Text(
-                                  '• ${children.length} sub-items',
-                                  style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
-                                ),
-                              ],
-                            ],
-                          ),
+                            ),
+                          ] else ...[
+                            Text(
+                              'Income Stream',
+                              style: TextStyle(fontSize: 10, color: Colors.grey.shade500, fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+
+                // Budget or Limit
+                if (isExpense && category.budget > 0) ...[
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      CurrencyDisplay(
+                        amount: category.budget,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'monthly limit',
+                        style: TextStyle(fontSize: 9.5, color: Colors.grey.shade500, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 4),
+                ],
+
+                // Action Menu
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert_rounded, size: 18, color: Colors.grey[400]),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  onSelected: (val) {
+                    if (val == 'edit') {
+                      _showCategoryModal(existing: category, defaultType: type);
+                    } else if (val == 'default') {
+                      ref.read(categoriesProvider.notifier).setDefaultCategory(category.id, type);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('"${category.name}" set as default quick category.')),
+                      );
+                    } else if (val == 'delete') {
+                      _confirmDeleteCategory(context, category);
+                    }
+                  },
+                  itemBuilder: (ctx) => [
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit_outlined, size: 16),
+                          SizedBox(width: 8),
+                          Text('Edit Category', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-
-                    // Budget or Limit
-                    if (isExpense && category.budget > 0) ...[
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
+                    if (!category.isDefault)
+                      const PopupMenuItem(
+                        value: 'default',
+                        child: Row(
+                          children: [
+                            Icon(Icons.star_outline_rounded, size: 16, color: AppTheme.goldAccent),
+                            SizedBox(width: 8),
+                            Text('Set as Default', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                          ],
+                        ),
+                      ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
                         children: [
-                          CurrencyDisplay(
-                            amount: category.budget,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'monthly limit',
-                            style: TextStyle(fontSize: 9.5, color: Colors.grey.shade500, fontWeight: FontWeight.w600),
-                          ),
+                          Icon(Icons.delete_outline_rounded, size: 16, color: AppTheme.dangerRed),
+                          SizedBox(width: 8),
+                          Text('Delete Category', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.dangerRed)),
                         ],
                       ),
-                      const SizedBox(width: 4),
-                    ],
-
-                    // Action Menu
-                    PopupMenuButton<String>(
-                      icon: Icon(Icons.more_vert_rounded, size: 18, color: Colors.grey[400]),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      onSelected: (val) {
-                        if (val == 'edit') {
-                          _showCategoryModal(existing: category, defaultType: type);
-                        } else if (val == 'default') {
-                          ref.read(categoriesProvider.notifier).setDefaultCategory(category.id, type);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('"${category.name}" set as default quick category.')),
-                          );
-                        } else if (val == 'delete') {
-                          _confirmDeleteCategory(context, category);
-                        }
-                      },
-                      itemBuilder: (ctx) => [
-                        const PopupMenuItem(
-                          value: 'edit',
-                          child: Row(
-                            children: [
-                              Icon(Icons.edit_outlined, size: 16),
-                              SizedBox(width: 8),
-                              Text('Edit Category', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-                            ],
-                          ),
-                        ),
-                        if (!category.isDefault)
-                          const PopupMenuItem(
-                            value: 'default',
-                            child: Row(
-                              children: [
-                                Icon(Icons.star_outline_rounded, size: 16, color: AppTheme.goldAccent),
-                                SizedBox(width: 8),
-                                Text('Set as Default', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-                              ],
-                            ),
-                          ),
-                        const PopupMenuItem(
-                          value: 'delete',
-                          child: Row(
-                            children: [
-                              Icon(Icons.delete_outline_rounded, size: 16, color: AppTheme.dangerRed),
-                              SizedBox(width: 8),
-                              Text('Delete Category', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.dangerRed)),
-                            ],
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),
-
-                // Sub-categories list if any
-                if (children.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  const Divider(height: 1),
-                  const SizedBox(height: 6),
-                  ...children.map((child) => Padding(
-                        padding: const EdgeInsets.only(left: 36, top: 4, bottom: 4),
-                        child: Row(
-                          children: [
-                            Icon(child.icon, size: 14, color: child.color),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                child.name,
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                            if (child.isDefault)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.goldAccent.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: const Text('DEFAULT', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: AppTheme.goldAccent)),
-                              ),
-                            IconButton(
-                              icon: const Icon(Icons.edit_outlined, size: 15),
-                              color: Colors.grey[400],
-                              padding: const EdgeInsets.all(4),
-                              constraints: const BoxConstraints(),
-                              onPressed: () => _showCategoryModal(existing: child, defaultType: type),
-                            ),
-                          ],
-                        ),
-                      )),
-                ],
               ],
             ),
           ),

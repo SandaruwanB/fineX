@@ -96,6 +96,7 @@ class CategoriesNotifier extends StateNotifier<List<AppCategory>> {
   }
 
   static final List<AppCategory> _initialCategories = [
+    // Flat Expense Categories
     AppCategory(
       id: 'housing',
       name: 'Housing & Rent',
@@ -141,6 +142,17 @@ class CategoriesNotifier extends StateNotifier<List<AppCategory>> {
       isDefault: false,
     ),
     AppCategory(
+      id: 'healthcare',
+      name: 'Healthcare & Medical',
+      icon: Icons.medical_services_rounded,
+      budget: 250.0,
+      spent: 0.0,
+      color: const Color(0xFF10B981),
+      categoryType: 'EXPENSE',
+      isEssential: true,
+      isDefault: false,
+    ),
+    AppCategory(
       id: 'entertainment',
       name: 'Entertainment & Leisure',
       icon: Icons.movie_filter_rounded,
@@ -163,18 +175,7 @@ class CategoriesNotifier extends StateNotifier<List<AppCategory>> {
       isDefault: false,
     ),
 
-    // Income categories
-    AppCategory(
-      id: 'earned_income',
-      name: 'Earned Income',
-      icon: Icons.work_rounded,
-      budget: 0.0,
-      spent: 0.0,
-      color: AppTheme.emeraldGreen,
-      categoryType: 'INCOME',
-      isEssential: true,
-      isDefault: false,
-    ),
+    // Flat Income Categories
     AppCategory(
       id: 'salary',
       name: 'Salary',
@@ -183,9 +184,19 @@ class CategoriesNotifier extends StateNotifier<List<AppCategory>> {
       spent: 0.0,
       color: AppTheme.emeraldGreen,
       categoryType: 'INCOME',
-      parentId: 'earned_income',
       isEssential: true,
       isDefault: true,
+    ),
+    AppCategory(
+      id: 'business',
+      name: 'Business & Freelance',
+      icon: Icons.work_rounded,
+      budget: 0.0,
+      spent: 0.0,
+      color: AppTheme.wealthGreen,
+      categoryType: 'INCOME',
+      isEssential: true,
+      isDefault: false,
     ),
     AppCategory(
       id: 'investment',
@@ -204,9 +215,19 @@ class CategoriesNotifier extends StateNotifier<List<AppCategory>> {
       icon: Icons.account_balance_wallet_rounded,
       budget: 0.0,
       spent: 0.0,
-      color: AppTheme.neonBlue,
+      color: const Color(0xFF6366F1),
       categoryType: 'INCOME',
-      parentId: 'investment',
+      isEssential: true,
+      isDefault: false,
+    ),
+    AppCategory(
+      id: 'rental',
+      name: 'Rental & Side Income',
+      icon: Icons.domain_rounded,
+      budget: 0.0,
+      spent: 0.0,
+      color: AppTheme.goldAccent,
+      categoryType: 'INCOME',
       isEssential: true,
       isDefault: false,
     ),
@@ -215,13 +236,7 @@ class CategoriesNotifier extends StateNotifier<List<AppCategory>> {
   Future<void> loadCategories() async {
     final list = await DbHelper.getCategories();
     if (list.isEmpty) {
-      final roots = _initialCategories.where((c) => c.parentId == null).toList();
-      final children = _initialCategories.where((c) => c.parentId != null).toList();
-
-      for (var cat in roots) {
-        await DbHelper.insertCategory(cat.toMap());
-      }
-      for (var cat in children) {
+      for (var cat in _initialCategories) {
         await DbHelper.insertCategory(cat.toMap());
       }
       state = _initialCategories;
