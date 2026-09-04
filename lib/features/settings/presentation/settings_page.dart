@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
@@ -23,6 +26,263 @@ class SettingsPage extends ConsumerStatefulWidget {
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _isDrawerOpen = false;
+
+  void _showEditProfileModal(BuildContext context, UserProfile profile) {
+    final nameController = TextEditingController(text: profile.name);
+    final emailController = TextEditingController(text: profile.email);
+    String? selectedImagePath = profile.imagePath;
+    bool isImageRemoved = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            final currentImagePath = isImageRemoved ? null : selectedImagePath;
+            final hasCustomImage = currentImagePath != null &&
+                currentImagePath.isNotEmpty &&
+                File(currentImagePath).existsSync();
+
+            return Container(
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF101726) : Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                border: Border.all(color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
+              ),
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                top: 24,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    const Text(
+                      'Edit User Profile',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Avatar with Photo Pick / Remove Action
+                    Center(
+                      child: Column(
+                        children: [
+                          Stack(
+                            children: [
+                              Container(
+                                width: 84,
+                                height: 84,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: AppTheme.emeraldGreen, width: 2.5),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppTheme.emeraldGreen.withValues(alpha: 0.2),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: CircleAvatar(
+                                  backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                                  backgroundImage: hasCustomImage ? FileImage(File(currentImagePath)) : null,
+                                  child: hasCustomImage
+                                      ? null
+                                      : Text(
+                                          profile.initials,
+                                          style: TextStyle(
+                                            fontSize: 26,
+                                            fontWeight: FontWeight.w900,
+                                            color: isDark ? Colors.white : Colors.black87,
+                                          ),
+                                        ),
+                                ),
+                              ),
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    final result = await FilePicker.platform.pickFiles(
+                                      type: FileType.image,
+                                    );
+                                    if (result != null && result.files.single.path != null) {
+                                      setModalState(() {
+                                        selectedImagePath = result.files.single.path;
+                                        isImageRemoved = false;
+                                      });
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(7),
+                                    decoration: const BoxDecoration(
+                                      color: AppTheme.emeraldGreen,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.camera_alt_rounded,
+                                      size: 16,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              TextButton.icon(
+                                onPressed: () async {
+                                  final result = await FilePicker.platform.pickFiles(
+                                    type: FileType.image,
+                                  );
+                                  if (result != null && result.files.single.path != null) {
+                                    setModalState(() {
+                                      selectedImagePath = result.files.single.path;
+                                      isImageRemoved = false;
+                                    });
+                                  }
+                                },
+                                icon: const Icon(Icons.photo_library_rounded, size: 15),
+                                label: const Text('Change Photo', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: AppTheme.emeraldGreen,
+                                  minimumSize: Size.zero,
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                ),
+                              ),
+                              if (hasCustomImage) ...[
+                                const SizedBox(width: 8),
+                                TextButton.icon(
+                                  onPressed: () {
+                                    setModalState(() {
+                                      isImageRemoved = true;
+                                      selectedImagePath = null;
+                                    });
+                                  },
+                                  icon: const Icon(Icons.delete_outline_rounded, size: 15, color: AppTheme.dangerRed),
+                                  label: const Text('Remove', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.dangerRed)),
+                                  style: TextButton.styleFrom(
+                                    minimumSize: Size.zero,
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Display Name',
+                        hintText: 'e.g. Sandaruwan B.',
+                        prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    TextField(
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(
+                        labelText: 'Email Address',
+                        hintText: 'e.g. user@finex.vault',
+                        prefixIcon: Icon(Icons.email_outlined, size: 20),
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text('Cancel'),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              final name = nameController.text.trim();
+                              final email = emailController.text.trim();
+                              if (name.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Please enter a display name.')),
+                                );
+                                return;
+                              }
+
+                              HapticFeedback.lightImpact();
+
+                              await ref.read(userProfileProvider.notifier).updateProfile(
+                                    name: name,
+                                    email: email,
+                                    imagePath: isImageRemoved ? null : selectedImagePath,
+                                    clearImage: isImageRemoved,
+                                  );
+
+                              if (context.mounted) {
+                                Navigator.pop(ctx);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    backgroundColor: AppTheme.darkSurface,
+                                    content: const Row(
+                                      children: [
+                                        Icon(Icons.check_circle_rounded, color: AppTheme.emeraldGreen, size: 20),
+                                        SizedBox(width: 10),
+                                        Text('Profile updated successfully!', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white)),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.wealthGreen,
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(double.infinity, 50),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            ),
+                            child: const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.w800)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   Future<void> _toggleBiometrics(bool enabled) async {
     final authNotifier = ref.read(authProvider.notifier);
@@ -61,6 +321,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final separatorFormat = ref.watch(numberSeparatorFormatProvider);
     final decimalDigits = ref.watch(decimalDigitsProvider);
     final isCurrencySpacingEnabled = ref.watch(currencySpacingProvider);
+    final userProfile = ref.watch(userProfileProvider);
+    final hasCustomPhoto = userProfile.imagePath != null &&
+        userProfile.imagePath!.isNotEmpty &&
+        File(userProfile.imagePath!).existsSync();
 
     return PopScope(
       canPop: false,
@@ -102,52 +366,142 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
           children: [
-            // Minimal Google Style Profile Header
+            // Minimal Google Style Profile Header with Interactive Editing
             Container(
-              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF161C2A) : Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
                 ),
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 26,
-                    backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
-                    child: Text(
-                      'SB',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
-                    ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(20),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () => _showEditProfileModal(context, userProfile),
+                  child: Padding(
+                    padding: const EdgeInsets.all(18),
+                    child: Row(
                       children: [
-                        Row(
+                        Stack(
+                          clipBehavior: Clip.none,
                           children: [
-                            const Text(
-                              'Sandaruwan B.',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                            Container(
+                              width: 54,
+                              height: 54,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppTheme.emeraldGreen.withValues(alpha: 0.8),
+                                  width: 2,
+                                ),
+                              ),
+                              child: CircleAvatar(
+                                backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                                backgroundImage: hasCustomPhoto ? FileImage(File(userProfile.imagePath!)) : null,
+                                child: hasCustomPhoto
+                                    ? null
+                                    : Text(
+                                        userProfile.initials,
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w800,
+                                          color: isDark ? Colors.white : Colors.black87,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                            Positioned(
+                              bottom: -2,
+                              right: -2,
+                              child: Container(
+                                padding: const EdgeInsets.all(3.5),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.emeraldGreen,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: isDark ? const Color(0xFF161C2A) : Colors.white,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.edit_rounded,
+                                  size: 10,
+                                  color: Colors.white,
+                                ),
+                              ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'sandaruwan@finex.vault',
-                          style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      userProfile.name,
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.wealthGreen.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(5),
+                                    ),
+                                    child: const Text(
+                                      'PRO',
+                                      style: TextStyle(
+                                        fontSize: 8.5,
+                                        fontWeight: FontWeight.w900,
+                                        color: AppTheme.emeraldGreen,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                userProfile.email,
+                                style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.edit_outlined,
+                            size: 16,
+                            color: Colors.grey,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ],
+                ),
               ),
             ),
             const SizedBox(height: 28),

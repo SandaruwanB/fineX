@@ -21,7 +21,7 @@ class DbHelper {
             final db = await openDatabase(
                 path,
                 password: encryptionKey,
-                version: 3,
+                version: 4,
                 onCreate: _onCreate,
                 onUpgrade: _onUpgrade,
                 onOpen: (db) async {
@@ -37,7 +37,7 @@ class DbHelper {
             try {
                 final plainDb = await openDatabase(
                     path,
-                    version: 3,
+                    version: 4,
                     onCreate: _onCreate,
                     onUpgrade: _onUpgrade,
                 );
@@ -47,7 +47,7 @@ class DbHelper {
                 final encDb = await openDatabase(
                     path,
                     password: encryptionKey,
-                    version: 3,
+                    version: 4,
                     onCreate: _onCreate,
                     onUpgrade: _onUpgrade,
                     onOpen: (db) async {
@@ -64,7 +64,7 @@ class DbHelper {
                 return await openDatabase(
                     path,
                     password: encryptionKey,
-                    version: 3,
+                    version: 4,
                     onCreate: _onCreate,
                     onUpgrade: _onUpgrade,
                     onOpen: (db) async {
@@ -83,7 +83,8 @@ class DbHelper {
         name TEXT NOT NULL,
         balance REAL NOT NULL,
         type TEXT NOT NULL,
-        color INTEGER NOT NULL
+        color INTEGER NOT NULL,
+        is_default INTEGER NOT NULL DEFAULT 0
       )
     ''');
 
@@ -184,6 +185,10 @@ class DbHelper {
       await db.execute("ALTER TABLE categories ADD COLUMN is_essential INTEGER NOT NULL DEFAULT 1");
       await db.execute("ALTER TABLE categories ADD COLUMN is_default INTEGER NOT NULL DEFAULT 0");
     }
+
+    if (oldVersion < 4) {
+      await db.execute("ALTER TABLE accounts ADD COLUMN is_default INTEGER NOT NULL DEFAULT 0");
+    }
   }
 
   // --- Accounts Queries ---
@@ -210,6 +215,14 @@ class DbHelper {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  static Future<void> setDefaultAccount(String id) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.update('accounts', {'is_default': 0});
+      await txn.update('accounts', {'is_default': 1}, where: 'id = ?', whereArgs: [id]);
+    });
   }
 
   static Future<void> deleteAccount(String id) async {

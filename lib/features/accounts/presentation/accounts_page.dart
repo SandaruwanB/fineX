@@ -26,6 +26,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
     final balanceController = TextEditingController();
     String selectedType = 'checking';
     Color selectedColor = AppTheme.wealthGreen;
+    bool isDefault = ref.read(accountsProvider).isEmpty;
 
     final colors = [
       AppTheme.wealthGreen,
@@ -150,6 +151,47 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                         );
                       }).toList(),
                     ),
+                    const SizedBox(height: 20),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF161F30) : const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isDark ? const Color(0xFF2D3B52) : const Color(0xFFE2E8F0),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.star_rounded, color: AppTheme.goldAccent, size: 22),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Set as Default Account',
+                                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                                ),
+                                SizedBox(height: 2),
+                                Text(
+                                  'Pre-selected for transactions & quick logging',
+                                  style: TextStyle(fontSize: 10.5, color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch.adaptive(
+                            value: isDefault,
+                            activeThumbColor: AppTheme.goldAccent,
+                            activeTrackColor: AppTheme.goldAccent.withValues(alpha: 0.4),
+                            onChanged: (val) {
+                              setState(() => isDefault = val);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 28),
                     Row(
                       children: [
@@ -171,6 +213,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                                       balance,
                                       selectedType,
                                       selectedColor,
+                                      isDefault: isDefault,
                                     );
                                 Navigator.pop(ctx);
                               }
@@ -200,6 +243,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
     final nameController = TextEditingController(text: account.name);
     String selectedType = account.type;
     Color selectedColor = account.color;
+    bool isDefault = account.isDefault;
 
     final colors = [
       AppTheme.wealthGreen,
@@ -403,6 +447,47 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                         );
                       }).toList(),
                     ),
+                    const SizedBox(height: 20),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF161F30) : const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isDark ? const Color(0xFF2D3B52) : const Color(0xFFE2E8F0),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.star_rounded, color: AppTheme.goldAccent, size: 22),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Set as Default Account',
+                                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                                ),
+                                SizedBox(height: 2),
+                                Text(
+                                  'Pre-selected for transactions & quick logging',
+                                  style: TextStyle(fontSize: 10.5, color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch.adaptive(
+                            value: isDefault,
+                            activeThumbColor: AppTheme.goldAccent,
+                            activeTrackColor: AppTheme.goldAccent.withValues(alpha: 0.4),
+                            onChanged: (val) {
+                              setState(() => isDefault = val);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 28),
                     Row(
                       children: [
@@ -423,6 +508,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                                       name: name,
                                       type: selectedType,
                                       color: selectedColor,
+                                      isDefault: isDefault,
                                     );
                                 Navigator.pop(ctx);
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -893,11 +979,16 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
         color: isDark ? const Color(0xFF131D2E) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+          color: account.isDefault
+              ? (isDark ? AppTheme.goldAccent.withValues(alpha: 0.5) : AppTheme.goldAccent.withValues(alpha: 0.6))
+              : (isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
+          width: account.isDefault ? 1.4 : 1.0,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.03),
+            color: account.isDefault
+                ? AppTheme.goldAccent.withValues(alpha: isDark ? 0.08 : 0.05)
+                : Colors.black.withValues(alpha: isDark ? 0.15 : 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -914,18 +1005,44 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
             child: Row(
               children: [
                 // Icon Container with Account Color
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: account.color.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: account.color.withValues(alpha: 0.35),
-                      width: 1,
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: account.color.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: account.color.withValues(alpha: 0.35),
+                          width: 1,
+                        ),
+                      ),
+                      child: Icon(icon, color: account.color, size: 22),
                     ),
-                  ),
-                  child: Icon(icon, color: account.color, size: 22),
+                    if (account.isDefault)
+                      Positioned(
+                        top: -3,
+                        right: -3,
+                        child: Container(
+                          padding: const EdgeInsets.all(2.5),
+                          decoration: BoxDecoration(
+                            color: AppTheme.goldAccent,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF131D2E) : Colors.white,
+                              width: 1.5,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.star_rounded,
+                            size: 9,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(width: 14),
 
@@ -934,15 +1051,51 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        account.name,
-                        style: TextStyle(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w800,
-                          color: isDark ? Colors.white : const Color(0xFF0F172A),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              account.name,
+                              style: TextStyle(
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w800,
+                                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (account.isDefault) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5.5, vertical: 1.5),
+                              decoration: BoxDecoration(
+                                color: AppTheme.goldAccent.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(
+                                  color: AppTheme.goldAccent.withValues(alpha: 0.4),
+                                  width: 0.8,
+                                ),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.star_rounded, size: 10, color: AppTheme.goldAccent),
+                                  SizedBox(width: 2),
+                                  Text(
+                                    'DEFAULT',
+                                    style: TextStyle(
+                                      fontSize: 8.5,
+                                      fontWeight: FontWeight.w900,
+                                      color: AppTheme.goldAccent,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: 3),
                       Row(
@@ -1019,13 +1172,45 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                   constraints: const BoxConstraints(),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   onSelected: (val) {
-                    if (val == 'edit') {
+                    if (val == 'set_default') {
+                      ref.read(accountsProvider.notifier).setDefaultAccount(account.id);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          backgroundColor: AppTheme.darkSurface,
+                          content: Row(
+                            children: [
+                              const Icon(Icons.star_rounded, color: AppTheme.goldAccent, size: 20),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  '"${account.name}" set as default account.',
+                                  style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    } else if (val == 'edit') {
                       _showEditAccountBottomSheet(account);
                     } else if (val == 'delete') {
                       _confirmDeleteAccount(context, account);
                     }
                   },
                   itemBuilder: (ctx) => [
+                    if (!account.isDefault)
+                      const PopupMenuItem(
+                        value: 'set_default',
+                        child: Row(
+                          children: [
+                            Icon(Icons.star_rounded, size: 16, color: AppTheme.goldAccent),
+                            SizedBox(width: 8),
+                            Text('Set as Default', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                          ],
+                        ),
+                      ),
                     const PopupMenuItem(
                       value: 'edit',
                       child: Row(

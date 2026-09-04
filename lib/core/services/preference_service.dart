@@ -17,6 +17,9 @@ class PreferenceService {
   static const String _keyNumberSeparatorFormat = 'number_separator_format';
   static const String _keyDecimalDigits = 'decimal_digits';
   static const String _keyCurrencySpacing = 'currency_spacing';
+  static const String _keyUserName = 'user_display_name';
+  static const String _keyUserEmail = 'user_email_address';
+  static const String _keyUserProfileImage = 'user_profile_image_path';
 
   bool get isOnboardingCompleted =>
       _prefs.getBool(_keyOnboardingCompleted) ?? false;
@@ -88,6 +91,27 @@ class PreferenceService {
 
   Future<void> setCurrencySpacingEnabled(bool enabled) async {
     await _prefs.setBool(_keyCurrencySpacing, enabled);
+  }
+
+  String get userName =>
+      _prefs.getString(_keyUserName) ?? 'Sandaruwan B.';
+
+  Future<void> setUserName(String name) async {
+    await _prefs.setString(_keyUserName, name);
+  }
+
+  String get userEmail =>
+      _prefs.getString(_keyUserEmail) ?? 'sandaruwan@finex.vault';
+
+  Future<void> setUserEmail(String email) async {
+    await _prefs.setString(_keyUserEmail, email);
+  }
+
+  String get userProfileImage =>
+      _prefs.getString(_keyUserProfileImage) ?? '';
+
+  Future<void> setUserProfileImage(String path) async {
+    await _prefs.setString(_keyUserProfileImage, path);
   }
 
   Future<void> clear() async {
@@ -216,4 +240,78 @@ class CurrencySpacingNotifier extends StateNotifier<bool> {
 final currencySpacingProvider = StateNotifierProvider<CurrencySpacingNotifier, bool>((ref) {
   final prefService = ref.watch(preferenceServiceProvider);
   return CurrencySpacingNotifier(prefService);
+});
+
+// --- User Profile State ---
+
+class UserProfile {
+  final String name;
+  final String email;
+  final String? imagePath;
+
+  const UserProfile({
+    required this.name,
+    required this.email,
+    this.imagePath,
+  });
+
+  String get initials {
+    final clean = name.trim();
+    if (clean.isEmpty) return 'U';
+    final parts = clean.split(RegExp(r'\s+'));
+    if (parts.length == 1) {
+      return parts.first.substring(0, parts.first.length.clamp(1, 2)).toUpperCase();
+    }
+    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+  }
+
+  UserProfile copyWith({
+    String? name,
+    String? email,
+    String? imagePath,
+    bool clearImage = false,
+  }) {
+    return UserProfile(
+      name: name ?? this.name,
+      email: email ?? this.email,
+      imagePath: clearImage ? null : (imagePath ?? this.imagePath),
+    );
+  }
+}
+
+class UserProfileNotifier extends StateNotifier<UserProfile> {
+  final PreferenceService _prefService;
+
+  UserProfileNotifier(this._prefService)
+      : super(UserProfile(
+          name: _prefService.userName,
+          email: _prefService.userEmail,
+          imagePath: _prefService.userProfileImage.isEmpty ? null : _prefService.userProfileImage,
+        ));
+
+  Future<void> updateProfile({
+    required String name,
+    required String email,
+    String? imagePath,
+    bool clearImage = false,
+  }) async {
+    await _prefService.setUserName(name);
+    await _prefService.setUserEmail(email);
+    if (clearImage) {
+      await _prefService.setUserProfileImage('');
+    } else if (imagePath != null) {
+      await _prefService.setUserProfileImage(imagePath);
+    }
+    state = state.copyWith(
+      name: name,
+      email: email,
+      imagePath: imagePath,
+      clearImage: clearImage,
+    );
+  }
+}
+
+final userProfileProvider = StateNotifierProvider<UserProfileNotifier, UserProfile>((ref) {
+  final prefService = ref.watch(preferenceServiceProvider);
+  return UserProfileNotifier(prefService);
 });

@@ -147,7 +147,8 @@ class _FastLogModalState extends ConsumerState<FastLogModal> {
     }
 
     if (_selectedAccountId == null && accounts.isNotEmpty) {
-      _selectedAccountId = accounts.first.id;
+      final defaultAcc = accounts.firstWhere((a) => a.isDefault, orElse: () => accounts.first);
+      _selectedAccountId = defaultAcc.id;
     }
 
     final activeAccount = accounts.firstWhere(
@@ -621,6 +622,9 @@ class _FastLogModalState extends ConsumerState<FastLogModal> {
   }
 
   void _showAccountSelectMenu(BuildContext context, List<Account> accounts) {
+    final sortedAccounts = List<Account>.from(accounts)
+      ..sort((a, b) => (b.isDefault ? 1 : 0).compareTo(a.isDefault ? 1 : 0));
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -641,18 +645,63 @@ class _FastLogModalState extends ConsumerState<FastLogModal> {
               children: [
                 const Text('Select Source Account', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
                 const SizedBox(height: 12),
-                ...accounts.map((acc) {
+                ...sortedAccounts.map((acc) {
+                  final isSelected = acc.id == _selectedAccountId;
                   return ListTile(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    tileColor: isSelected ? (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)) : null,
                     leading: Container(
-                      width: 12,
-                      height: 12,
+                      width: 14,
+                      height: 14,
                       decoration: BoxDecoration(color: acc.color, shape: BoxShape.circle),
                     ),
-                    title: Text(acc.name, style: const TextStyle(fontWeight: FontWeight.w700)),
+                    title: Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            acc.name,
+                            style: TextStyle(
+                              fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (acc.isDefault) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppTheme.goldAccent.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.star_rounded, size: 11, color: AppTheme.goldAccent),
+                                SizedBox(width: 2),
+                                Text(
+                                  'DEFAULT',
+                                  style: TextStyle(fontSize: 8, fontWeight: FontWeight.w800, color: AppTheme.goldAccent),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                     subtitle: Text(acc.type.toUpperCase(), style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                    trailing: Text(
-                      acc.balance.toStringAsFixed(2),
-                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          acc.balance.toStringAsFixed(2),
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                        if (isSelected) ...[
+                          const SizedBox(width: 8),
+                          const Icon(Icons.check_rounded, size: 18, color: AppTheme.emeraldGreen),
+                        ],
+                      ],
                     ),
                     onTap: () {
                       setState(() => _selectedAccountId = acc.id);

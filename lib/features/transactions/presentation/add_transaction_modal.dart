@@ -36,8 +36,9 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final accounts = ref.read(accountsProvider);
       if (accounts.isNotEmpty) {
+        final defaultAcc = accounts.firstWhere((a) => a.isDefault, orElse: () => accounts.first);
         setState(() {
-          _selectedAccountId = accounts.first.id;
+          _selectedAccountId = defaultAcc.id;
         });
       }
     });
@@ -93,7 +94,7 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
       }
       if (_selectedAccountId == _selectedTargetAccountId) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Source and destination accounts cannot be the same.')),
+          const SnackBar(content: Text('Source and Destination accounts must be different.')),
         );
         return;
       }
@@ -108,31 +109,42 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
       if (_isSplitEnabled) {
         if (_splits.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please add at least one split line item.')),
+            const SnackBar(content: Text('Please add at least one split item.')),
           );
           return;
         }
 
-        final double allocated = _splits.fold(0.0, (sum, item) => sum + item.amount);
-        if ((amount - allocated).abs() > 0.01) {
+        final totalSplit = _splits.fold<double>(0.0, (sum, item) => sum + item.amount);
+        if ((totalSplit - amount).abs() > 0.01) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Allocated split items total must exactly equal transaction amount.')),
+            SnackBar(content: Text('Split amounts sum ($totalSplit) must match total amount ($amount).')),
           );
           return;
         }
       }
     }
 
-    List<TransactionSplit> finalSplits = [];
-    if (_isSplitEnabled && _flowDirection != 'TRANSFER') {
-      for (var draft in _splits) {
+    final List<TransactionSplit> finalSplits = [];
+    if (_flowDirection != 'TRANSFER') {
+      if (_isSplitEnabled) {
+        for (var s in _splits) {
+          finalSplits.add(TransactionSplit(
+            id: DateTime.now().millisecondsSinceEpoch.toString() + s.hashCode.toString(),
+            transactionId: '',
+            categoryId: s.categoryId,
+            amount: s.amount,
+            flowDirection: _flowDirection,
+            description: _descriptionController.text.trim().isNotEmpty ? _descriptionController.text.trim() : null,
+          ));
+        }
+      } else {
         finalSplits.add(TransactionSplit(
-          id: DateTime.now().millisecondsSinceEpoch.toString() + draft.hashCode.toString(),
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
           transactionId: '',
-          categoryId: draft.categoryId,
-          amount: draft.amount,
+          categoryId: _selectedCategoryId!,
+          amount: amount,
           flowDirection: _flowDirection,
-          description: draft.description.isNotEmpty ? draft.description : null,
+          description: _descriptionController.text.trim().isNotEmpty ? _descriptionController.text.trim() : null,
         ));
       }
     }
@@ -282,7 +294,32 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
                 items: accounts.map((acc) {
                   return DropdownMenuItem(
                     value: acc.id,
-                    child: Text(acc.name),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(acc.name),
+                        if (acc.isDefault)
+                          Container(
+                            margin: const EdgeInsets.only(left: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppTheme.goldAccent.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.star_rounded, size: 12, color: AppTheme.goldAccent),
+                                SizedBox(width: 2),
+                                Text(
+                                  'DEFAULT',
+                                  style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800, color: AppTheme.goldAccent),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
                   );
                 }).toList(),
                 onChanged: (val) {

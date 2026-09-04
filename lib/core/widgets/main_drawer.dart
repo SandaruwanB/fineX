@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
 import '../../features/auth/auth_provider.dart';
+import '../services/preference_service.dart';
 
 class MainDrawer extends ConsumerWidget {
     final String activeRoute;
@@ -16,6 +18,7 @@ class MainDrawer extends ConsumerWidget {
         final themeMode = ref.watch(themeProvider);
         final isDark = themeMode == ThemeMode.dark;
         final authNotifier = ref.read(authProvider.notifier);
+        final userProfile = ref.watch(userProfileProvider);
 
         return Drawer(
             backgroundColor: isDark ? const Color(0xFF0D121F) : const Color(0xFFF8FAFC),
@@ -64,16 +67,25 @@ class MainDrawer extends ConsumerWidget {
                                             ),
                                         ],
                                     ),
-                                    child: const CircleAvatar(
-                                        backgroundColor: Color(0xFF1E293B),
-                                        child: Text(
-                                            'AM',
-                                            style: TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.w900,
-                                                fontSize: 17,
+                                    child: CircleAvatar(
+                                        backgroundColor: const Color(0xFF1E293B),
+                                        backgroundImage: userProfile.imagePath != null &&
+                                                userProfile.imagePath!.isNotEmpty &&
+                                                File(userProfile.imagePath!).existsSync()
+                                            ? FileImage(File(userProfile.imagePath!))
+                                            : null,
+                                        child: (userProfile.imagePath != null &&
+                                                userProfile.imagePath!.isNotEmpty &&
+                                                File(userProfile.imagePath!).existsSync())
+                                            ? null
+                                            : Text(
+                                                userProfile.initials,
+                                                style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.w900,
+                                                    fontSize: 17,
+                                                ),
                                             ),
-                                        ),
                                     ),
                                 ),
                                 const SizedBox(width: 14),
@@ -86,10 +98,10 @@ class MainDrawer extends ConsumerWidget {
                                         children: [
                                             Row(
                                                 children: [
-                                                    const Flexible(
+                                                    Flexible(
                                                         child: Text(
-                                                            'Alex Morgan',
-                                                            style: TextStyle(
+                                                            userProfile.name,
+                                                            style: const TextStyle(
                                                                 color: Colors.white,
                                                                 fontWeight: FontWeight.w800,
                                                                 fontSize: 16,
@@ -129,7 +141,7 @@ class MainDrawer extends ConsumerWidget {
                                                     const SizedBox(width: 4),
                                                     Expanded(
                                                         child: Text(
-                                                            'alex.morgan@finex.app',
+                                                            userProfile.email,
                                                             style: TextStyle(
                                                                 color: Colors.white.withValues(alpha: 0.7),
                                                                 fontSize: 11,
